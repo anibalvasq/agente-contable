@@ -32,13 +32,13 @@
     </header>
     <div id="log"></div>
     <form id="form">
-      <input id="text" placeholder="Escribí un mensaje…" autocomplete="off" autofocus />
+      <input id="text" placeholder="Escribe un mensaje…" autocomplete="off" autofocus />
       <button id="send" type="submit">Enviar</button>
     </form>
 
     <script>
       // El id de sesión lo emite y firma el SERVER: el cliente solo lo guarda
-      // y lo devuelve. Uno inventado acá no valida la firma y el server abre
+      // y lo devuelve. Uno inventado aquí no valida la firma y el server abre
       // una sesión nueva (ver src/channels/web/adapter.ts).
       let sessionId = sessionStorage.getItem('wa-agent-session') || null;
       const log = document.getElementById('log');
@@ -55,7 +55,7 @@
         return el;
       }
 
-      add('Escribí para empezar. Probá "¿qué hora es?" o "¿cuál es el horario?".', 'meta');
+      add('Escribe para empezar. Prueba "¿qué hora es?" o "¿cuál es el horario?".', 'meta');
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();

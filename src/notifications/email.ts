@@ -12,7 +12,7 @@ import { requestJson } from '../integrations/http.js';
  * ─────────────────────────────────────────────────────────────
  *  POR QUÉ HAY UN FRENO (y por qué importa más que el envío)
  * ─────────────────────────────────────────────────────────────
- * La primera versión de esto siempre es "mandá un mail cuando algo falle". Y
+ * La primera versión de esto siempre es "manda un mail cuando algo falle". Y
  * después OpenRouter se cae diez minutos, fallan 300 turnos, y te llegan 300
  * mails idénticos. Tu casilla se vuelve inútil justo el día que la necesitabas,
  * y encima quemás la cuota de Resend.

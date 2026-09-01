@@ -16,7 +16,7 @@ import type { ChannelAdapter, ChannelContext } from '../types.js';
 /**
  * El secreto con el que se firman las sesiones. Si no configuraste
  * SESSION_SECRET se genera uno al azar por proceso: las sesiones del demo se
- * pierden al reiniciar, que para un demo está perfecto. En producción ponelo,
+ * pierden al reiniciar, que para un demo está perfecto. En producción ponlo,
  * o cada deploy le borra la conversación a todo el mundo.
  */
 const SESSION_SECRET = env.SESSION_SECRET ?? randomBytes(32).toString('hex');
@@ -29,7 +29,7 @@ export const webAdapter: ChannelAdapter = {
     // Sirve la carpeta web/ (la UI) en la raíz.
     await app.register(fastifyStatic, { root: path.resolve(process.cwd(), 'web'), prefix: '/' });
 
-    // La app web postea acá y recibe la respuesta del agente en el acto.
+    // La app web postea aquí y recibe la respuesta del agente en el acto.
     app.post('/chat', async (request, reply) => {
       const body = (request.body ?? {}) as { sessionId?: string; text?: string };
       const text = typeof body.text === 'string' ? body.text.trim() : '';
@@ -59,7 +59,7 @@ export const webAdapter: ChannelAdapter = {
       return reply.send({ reply: answer ?? '', sessionId: signedId });
     });
 
-    logger.info(`canal web listo → abrí http://localhost:${env.PORT} para chatear`);
+    logger.info(`canal web listo → abre http://localhost:${env.PORT} para chatear`);
   },
 
   // El web responde en la misma llamada HTTP, no necesita enviar por fuera.

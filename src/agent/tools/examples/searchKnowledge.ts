@@ -4,13 +4,13 @@ import type { Tool } from '../index.js';
 
 /**
  * Ejemplo de herramienta que lee datos: busca en la base de conocimiento del
- * agent.yaml por palabras clave. Es un RAG-lite; para algo serio, reemplazá
+ * agent.yaml por palabras clave. Es un RAG-lite; para algo serio, reemplaza
  * esta búsqueda por embeddings + una base vectorial (pgvector, etc.).
  *
  * OJO con `returnsUntrustedContent` si la extendés. Hoy está en false porque el
- * contenido sale de TU agent.yaml: lo escribiste vos. En el momento en que esta
+ * contenido sale de TU agent.yaml: lo escribiste tú. En el momento en que esta
  * herramienta lea una web, un CRM, un Sheet compartido o un PDF del cliente,
- * pasá la bandera a true — si no, estarías metiendo texto de terceros en el
+ * pasa la bandera a true — si no, estarías metiendo texto de terceros en el
  * prompt sin marcar, que es el vector de inyección indirecta.
  */
 export const searchKnowledge: Tool = {
@@ -22,7 +22,7 @@ export const searchKnowledge: Tool = {
     function: {
       name: 'search_knowledge',
       description:
-        'Busca información de la empresa (horarios, precios, políticas, FAQ) en la base de conocimiento. Usala ANTES de decir que no sabés algo.',
+        'Busca información de la empresa (horarios, precios, políticas, FAQ) en la base de conocimiento. Usala ANTES de decir que no sabes algo.',
       parameters: {
         type: 'object',
         properties: { query: { type: 'string', description: 'Qué buscar, en pocas palabras.' } },
@@ -51,8 +51,8 @@ export const searchKnowledge: Tool = {
 
     // Devolvemos DATOS, no instrucciones.
     //
-    // Antes esto traía un campo `note` que le decía al modelo "respondé con
-    // esto, en tus palabras" / "decí que lo vas a consultar". Funcionaba, pero
+    // Antes esto traía un campo `note` que le decía al modelo "responde con
+    // esto, en tus palabras" / "di que lo vas a consultar". Funcionaba, pero
     // enseñaba el hábito exacto que causa las inyecciones indirectas: mezclar
     // órdenes dentro de un payload de datos. Si el modelo aprende que las
     // herramientas le dan órdenes, va a obedecer también las que le meta un

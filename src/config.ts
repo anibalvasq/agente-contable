@@ -20,12 +20,12 @@ const guardrailsSchema = z
   .object({
     /**
      * Qué hacer cuando se detecta un intento de manipulación en el mensaje:
-     *   log        solo lo registra (y podés mirarlo en tus logs).
+     *   log        solo lo registra (y puedes mirarlo en tus logs).
      *   reinforce  agrega un recordatorio al final del prompt. ← default
      *   block      no llama al modelo y responde `blocked_reply`.
      * 'block' es tentador pero tiene falsos positivos: alguien que escribe
-     * "ignorá lo anterior, mejor quiero el modelo azul" es un cliente, no un
-     * atacante. Empezá en 'reinforce' y mirá tus logs antes de endurecerlo.
+     * "ignora lo anterior, mejor quiero el modelo azul" es un cliente, no un
+     * atacante. Empieza en 'reinforce' y mira tus logs antes de endurecerlo.
      */
     on_injection: z.enum(['log', 'reinforce', 'block']).default('reinforce'),
 
@@ -59,20 +59,20 @@ const guardrailsSchema = z
      * historial viaja entero en cada turno. El ×3 es el margen que hace que un
      * día bueno no lo dispare, pero un loop con otro bot sí.)
      *
-     * El default asume ~150 conversaciones diarias. Si vendés más que eso,
-     * subilo — o dejá que `npm run setup` lo calcule por vos.
+     * El default asume ~150 conversaciones diarias. Si vendes más que eso,
+     * súbelo — o deja que `npm run setup` lo calcule por ti.
      */
     max_tokens_per_day: z.number().int().nonnegative().default(20_000_000),
 
     /**
      * Regex (como texto) que la respuesta NO puede contener. El caso típico es
-     * que el bot no prometa lo que no podés cumplir.
+     * que el bot no prometa lo que no puedes cumplir.
      * Ejemplo: ['\\b\\d{2,3}\\s*%\\s*(de\\s+)?descuento', 'garantizo|te aseguro']
      */
     forbidden_patterns: z.array(z.string()).default([]),
 
     /** Qué responder cuando la guarda de salida bloquea la respuesta. */
-    blocked_reply: z.string().default('Dejame confirmar ese dato con el equipo y te respondo en un momento.'),
+    blocked_reply: z.string().default('Déjame confirmar ese dato con el equipo y te respondo en un momento.'),
     /** Qué responder cuando se agotó el presupuesto de tokens. */
     budget_reply: z
       .string()
@@ -86,7 +86,7 @@ const schema = z.object({
   system_prompt: z.string().min(1, 'Falta system_prompt en agent.yaml'),
   // Mensaje de bienvenida opcional (lo usa el demo web).
   greeting: z.string().optional(),
-  // Base de conocimiento simple: la herramienta search_knowledge busca acá.
+  // Base de conocimiento simple: la herramienta search_knowledge busca aquí.
   knowledge: z.array(z.string()).default([]),
   // Límites de seguridad y de gasto. Ver arriba.
   guardrails: guardrailsSchema,

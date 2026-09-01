@@ -3,7 +3,7 @@
 Este repo es **wa-agent-starter**: un boilerplate para agentes de IA de WhatsApp. Node 20 + TypeScript (ESM). Está construido y testeado — tu rol es ayudar al usuario a **configurarlo, extenderlo y desplegarlo**, no reescribir el núcleo.
 
 ## Onboarding
-Si el usuario quiere crear su agente desde cero, corré el comando `/build-agent`: te guía para entrevistarlo y dejar la config lista.
+Si el usuario quiere crear su agente desde cero, ejecuta el comando `/build-agent`: te guía para entrevistarlo y dejar la config lista.
 
 ## Arquitectura (lo mínimo para orientarte)
 - El **cerebro** (agente) es siempre el mismo. Lo que cambia por proyecto es el **canal** (por dónde entran los mensajes), las **herramientas** y la **personalidad**.
@@ -13,11 +13,12 @@ Si el usuario quiere crear su agente desde cero, corré el comando `/build-agent
 - `src/memory/` — store: `postgres` o `memory` (elegido con `STORE`).
 - `src/security/` — firmas HMAC de webhooks, rate limit, sesiones firmadas.
 - `src/notifications/` — avisos: al equipo por el canal (etiqueta en el CRM) y al desarrollador por mail (Resend).
+- `src/notifications/` — avisos: al equipo por el canal (etiqueta en el CRM) y al desarrollador por mail (Resend).
 - `config/agent.yaml` — identidad, conocimiento y `guardrails` (editable por no-devs).
 
-## Seguridad — leé esto antes de tocar el agente
+## Seguridad — lee esto antes de tocar el agente
 
-El kit tiene cuatro capas de defensa. Si agregás código, respetalas:
+El kit tiene cuatro capas de defensa. Si agregas código, respetalas:
 
 1. **`src/agent/guards/input.ts`** — normaliza el mensaje y marca intentos de manipulación.
 2. **`src/agent/guards/untrusted.ts`** — vallado de contenido externo. **La regla más importante del repo.**
@@ -30,20 +31,22 @@ Reglas que no se negocian:
 - **Toda herramienta nueva declara `sideEffect`.** `'write'` ante la duda.
 - **`returnsUntrustedContent: true`** si el resultado puede traer texto escrito por un tercero (web, CRM, PDF del cliente, API externa, Sheet compartido). Es el caso más común y el que más se olvida.
 - **Las herramientas de escritura validan sus argumentos contra la base de datos**, nunca confían en el número, precio o id que mandó el modelo. Ninguna guarda cubre esto.
-- **El handoff no es solo apagar el bot.** `escalate_to_human` apaga el agente, marca la conversación en la plataforma del equipo (la tag de GHL, el label de Chatwoot) y avisa por mail. Si agregás un canal, implementá `handoff` con el mecanismo de etiquetas de esa plataforma — si solo apagás el bot, el cliente queda esperando a alguien que no sabe que lo espera.
+- **El handoff no es solo apagar el bot.** `escalate_to_human` apaga el agente, marca la conversación en la plataforma del equipo (la tag de GHL, el label de Chatwoot) y avisa por mail. Si agregas un canal, implementa `handoff` con el mecanismo de etiquetas de esa plataforma — si solo apagás el bot, el cliente queda esperando a alguien que no sabe que lo espera.
 - **Ningún aviso automático sin freno.** Todo lo que mande mails va por `notifications/`, que agrupa por clave y no repite dentro de 15 minutos. Un `sendAlert` por cada error convierte una caída de diez minutos en cientos de mails.
 - **Ningún webhook sin autenticar.** Firma HMAC (cloud-api) o secreto compartido (el resto), incluso en los stubs: encolan trabajo y hacen correr el LLM.
 
 ## Tareas comunes
-- **Cambiar la personalidad** → editá `config/agent.yaml` (nada de código).
+- **Cambiar la personalidad** → edita `config/agent.yaml` (nada de código).
 - **Ajustar límites de gasto o guardas** → sección `guardrails` de `config/agent.yaml`.
-- **Agregar una herramienta** → copiá un archivo de `src/agent/tools/examples/`, definí `sideEffect`, `returnsUntrustedContent`, `definition` y `run`, y sumalo a `defaultTools` en `src/agent/tools/index.ts`.
-- **Agregar/terminar un canal** → implementá la interfaz de `src/channels/types.ts` y registralo en `src/channels/registry.ts`. Los stubs `chatwoot/` y `ycloud/` son plantillas. **Empezá por la verificación del webhook.**
+- **Agregar una herramienta** → copia un archivo de `src/agent/tools/examples/`, define `sideEffect`, `returnsUntrustedContent`, `definition` y `run`, y súmalo a `defaultTools` en `src/agent/tools/index.ts`.
+- **Agregar/terminar un canal** → implementa la interfaz de `src/channels/types.ts` y regístralo en `src/channels/registry.ts`. Los stubs `chatwoot/` y `ycloud/` son plantillas. **Empieza por la verificación del webhook.**
 - **Probar** → `npm run demo` (web) o `npm run chat` (terminal). Ambos corren sin Postgres ni WhatsApp.
 - **Verificar** → `npm run typecheck` y `npm test`.
+- **Desplegar** → Coolify es donde vive el backend, y **desplegar va ANTES de conectar un canal**: el webhook necesita una URL pública. `npm run deploy` la primera vez, `npm run redeploy` después. No hay webhook de GitHub; el deploy se dispara contra la API de Coolify.
 
 ## Reglas
+- **Escribí en español neutro**, no rioplatense: el repo lo leen alumnos de toda Latinoamérica. "puedes" y no "podés", "ejecuta" y no "corré", "aquí" y no "acá". Ojo con los regex de `guards/input.ts`: ahí conviven las dos variantes a propósito, porque un atacante escribe en la que se le ocurra.
 - No pongas secretos en el código ni los commitees; van en `.env` (gitignoreado).
-- Mantené el estilo: identificadores en inglés, comentarios y docs en español.
-- Los comentarios explican **por qué**, no qué. Este repo se lee para aprender: si arreglás un bug sutil, dejá anotado cuál era.
-- Antes de dar por hecho un cambio, corré `npm run typecheck` y `npm test`.
+- Mantén el estilo: identificadores en inglés, comentarios y docs en español.
+- Los comentarios explican **por qué**, no qué. Este repo se lee para aprender: si arreglás un bug sutil, deja anotado cuál era.
+- Antes de dar por hecho un cambio, ejecuta `npm run typecheck` y `npm test`.

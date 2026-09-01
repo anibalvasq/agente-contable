@@ -11,12 +11,12 @@ import { sendAlert } from './email.js';
  *     ADAPTADOR DE CANAL, que es el único que sabe cómo se marca una
  *     conversación en esa plataforma.
  *
- *  2. VOS, que lo estás construyendo. Te enterás por mail, porque los eventos
+ *  2. VOS, que lo estás construyendo. Te enteras por mail, porque los eventos
  *     que te importan (se abandonó un turno, se agotó el presupuesto) no tienen
  *     dónde aparecer en el CRM y no vas a estar mirando los logs a las 3 AM.
  *
- * Un handoff dispara las dos: el equipo tiene que atender al cliente, y vos
- * querés saber con qué frecuencia tu agente se rinde.
+ * Un handoff dispara las dos: el equipo tiene que atender al cliente, y tú
+ * quieres saber con qué frecuencia tu agente se rinde.
  */
 
 export interface HandoffNotice {
@@ -94,7 +94,7 @@ async function avisarPorMail(notice: HandoffNotice): Promise<void> {
       `Conversación: ${notice.conversationId}`,
       '',
       'El agente NO se reactiva solo — es una decisión humana y deliberada.',
-      'Para volver a activarlo: poné agent_enabled = true en esa conversación.',
+      'Para volver a activarlo: pon agent_enabled = true en esa conversación.',
     ].join('\n'),
   });
 }

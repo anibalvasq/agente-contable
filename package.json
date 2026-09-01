@@ -15,7 +15,10 @@
     "chat": "tsx scripts/chat.ts",
     "demo": "cross-env CHANNEL_ADAPTER=web STORE=memory tsx watch src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "cross-env OPENROUTER_API_KEY=test-key STORE=memory node --import tsx --test \"src/**/*.test.ts\""
+    "deploy": "tsx scripts/deploy-coolify.ts",
+    "redeploy": "tsx scripts/redeploy-coolify.ts",
+    "test": "cross-env OPENROUTER_API_KEY=test-key STORE=memory node --import tsx --test \"src/**/*.test.ts\"",
+    "postinstall": "tsx scripts/ensure-env.ts"
   },
   "dependencies": {
     "@fastify/rate-limit": "^10.3.0",

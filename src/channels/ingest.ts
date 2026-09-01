@@ -30,7 +30,7 @@ function synthEventId(contactId: string, text: string): string {
  *
  * El orden de los controles no es casual: primero lo barato y lo que descarta
  * más (¿hay texto? ¿este contacto se pasó de la raya? ¿ya vimos este evento?),
- * y recién al final lo que cuesta plata.
+ * y recién al final lo que cuesta dinero.
  */
 export function makeChannelContext(
   store: ConversationStore,
@@ -63,7 +63,7 @@ export function makeChannelContext(
   }
 
   /**
-   * Normaliza el texto antes de que toque nada. Se hace acá, en la puerta, para
+   * Normaliza el texto antes de que toque nada. Se hace aquí, en la puerta, para
    * que lo que se guarda en Redis y en Postgres ya esté limpio: sin caracteres
    * invisibles usados para esconder instrucciones, y con un tope de largo.
    *

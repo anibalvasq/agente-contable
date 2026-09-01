@@ -15,7 +15,7 @@ const WEBHOOK_PATH = '/webhooks/cloud-api';
  * Configuración en Meta: WhatsApp → Configuration → Webhook:
  *   Callback URL: https://TU-DOMINIO/webhooks/cloud-api
  *   Verify token: el mismo que pusiste en META_VERIFY_TOKEN
- *   Suscribite al campo "messages".
+ *   Suscríbete al campo "messages".
  */
 export const cloudApiAdapter: ChannelAdapter = {
   name: 'cloud-api',
@@ -42,7 +42,7 @@ export const cloudApiAdapter: ChannelAdapter = {
           return reply.code(401).send({ error: 'firma inválida' });
         }
       }
-      // Sin secreto solo se llega acá con WEBHOOK_REQUIRE_SIGNATURE=false, que
+      // Sin secreto solo se llega aquí con WEBHOOK_REQUIRE_SIGNATURE=false, que
       // env.ts ya obligó a poner de forma explícita. Lo dejamos anotado en cada
       // request para que nadie descubra en producción que estaba así.
       else {

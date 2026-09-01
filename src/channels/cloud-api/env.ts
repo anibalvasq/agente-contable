@@ -9,7 +9,7 @@ import { z } from 'zod';
 const schema = z.object({
   META_ACCESS_TOKEN: z.string().min(1, 'Falta META_ACCESS_TOKEN'),
   META_PHONE_NUMBER_ID: z.string().min(1, 'Falta META_PHONE_NUMBER_ID'),
-  // El "Verify token" que inventás y ponés igual en el dashboard de Meta.
+  // El "Verify token" que inventás y pones igual en el dashboard de Meta.
   META_VERIFY_TOKEN: z.string().min(1, 'Falta META_VERIFY_TOKEN'),
 
   /**
@@ -24,7 +24,7 @@ const schema = z.object({
    *
    * Lo encontrás en: Meta for Developers → tu app → Settings → Basic → App Secret.
    *
-   * Se puede omitir solo si ponés WEBHOOK_REQUIRE_SIGNATURE=false, que es para
+   * Se puede omitir solo si pones WEBHOOK_REQUIRE_SIGNATURE=false, que es para
    * probar en local y nunca para producción.
    */
   META_APP_SECRET: z.string().optional(),
@@ -39,7 +39,7 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-// El chequeo cruzado va acá y no en el schema para poder explicarlo bien: es el
+// El chequeo cruzado va aquí y no en el schema para poder explicarlo bien: es el
 // error que más gente va a ver al actualizar, y merece un mensaje que enseñe.
 const requireSignature = (process.env.WEBHOOK_REQUIRE_SIGNATURE ?? 'true').toLowerCase() !== 'false';
 if (requireSignature && !parsed.data.META_APP_SECRET) {

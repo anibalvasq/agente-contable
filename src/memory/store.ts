@@ -70,7 +70,7 @@ export interface ConversationStore {
    * la primera migración con ese propósito, pero se insertaba siempre `{}`: el
    * día que algo salía mal no había con qué reconstruir qué había llegado.
    *
-   * No guardes acá el texto del mensaje: ya está en `messages`, y duplicar
+   * No guardes aquí el texto del mensaje: ya está en `messages`, y duplicar
    * datos personales en una tabla que nadie purga es pedir problemas. Van los
    * identificadores y los metadatos del evento.
    */

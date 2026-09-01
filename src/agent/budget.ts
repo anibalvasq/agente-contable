@@ -14,7 +14,7 @@ import { notifyError } from '../notifications/index.js';
  *  - POR CONVERSACIÓN: contiene el daño de un usuario abusivo o de un loop con
  *    un contacto puntual. El resto de los clientes sigue atendido.
  *  - POR DÍA (global): es el techo real de gasto. Si se cruza, algo se rompió a
- *    nivel sistema y querés enterarte antes que en el resumen de facturación.
+ *    nivel sistema y quieres enterarte antes que en el resumen de facturación.
  *
  * Para dimensionar los topes según el volumen del negocio, ver budgetSizing.ts
  * (vive aparte porque lo usa `npm run setup`, que corre sin .env).
@@ -151,16 +151,16 @@ export async function checkBudget(
     if (spent >= limits.perDay) {
       logger.error({ spent, limit: limits.perDay }, 'PRESUPUESTO DIARIO AGOTADO: el agente dejó de responder');
 
-      // A partir de acá TODOS tus clientes reciben budget_reply. El bot no
-      // falla: se apaga solo. Sin este mail te enterás cuando alguien reclama.
+      // A partir de aquí TODOS tus clientes reciben budget_reply. El bot no
+      // falla: se apaga solo. Sin este mail te enteras cuando alguien reclama.
       void notifyError({
         key: 'presupuesto-diario',
         title: 'PRESUPUESTO DIARIO AGOTADO — el agente dejó de responder',
         detail:
           'Se cruzó max_tokens_per_day. Todos los clientes están recibiendo el mensaje de ' +
           'budget_reply en lugar del agente, hasta que cambie el día.\n\n' +
-          'Si tu volumen creció, subí el tope: conversaciones_por_día × 40000 × 3.\n' +
-          'Si NO creció, algo está en loop — revisá los logs por una conversación que no para.',
+          'Si tu volumen creció, sube el tope: conversaciones_por_día × 40000 × 3.\n' +
+          'Si NO creció, algo está en loop — revisa los logs por una conversación que no para.',
         context: { gastado: spent, tope: limits.perDay },
       });
 

@@ -173,7 +173,7 @@ async function main() {
 
   step(8, 'Desplegando');
   await coolify('GET', `/deploy?uuid=${app.uuid}`);
-  console.log(`\n✓ Deploy disparado. En Coolify: asigná un dominio a "${APP_NAME}" (puerto 3000) y mirá los logs.`);
+  console.log(`\n✓ Deploy disparado. En Coolify: asigna un dominio a "${APP_NAME}" (puerto 3000) y mira los logs.`);
 }
 
 main().catch((err) => {

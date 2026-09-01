@@ -76,8 +76,10 @@ export interface ChannelAdapter {
    *   ghl       una tag en el contacto → dispara tus workflows y aparece en
    *             el filtro que ya usa tu equipo.
    *   chatwoot  un label en la conversación (+ cambiar el assignee).
-   *   cloud-api nada: la API de Meta no tiene CRM detrás. El único registro
-   *             es el agent_enabled del kit y el mail al desarrollador.
+   *   ycloud    una etiqueta en el contacto, que el equipo filtra en su panel.
+   *   cloud-api nada. Es el único sin dónde marcarlo: la API de Meta es de
+   *             mensajería pura, no tiene contactos ni etiquetas. Ahí el
+   *             registro es el agent_enabled del kit y el mail.
    *
    * Apagar el agente (`agent_enabled = false`) lo hace el kit siempre, en
    * `escalate_to_human`. Esto es lo OTRO: que el humano se entere, donde

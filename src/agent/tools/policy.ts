@@ -20,7 +20,7 @@ import type { Tool, ToolContext } from './index.js';
  * Este archivo es ese código. Frena una herramienta ANTES de ejecutarla.
  *
  * Las dos reglas que vienen de fábrica son un piso, no un techo. La regla que
- * de verdad importa la escribís vos, adentro de cada herramienta de escritura:
+ * de verdad importa la escribes tú, adentro de cada herramienta de escritura:
  *
  *   ✗ MAL   el modelo manda `descuento: 90` y la herramienta lo aplica.
  *   ✓ BIEN  la herramienta ignora el número del modelo y busca el descuento

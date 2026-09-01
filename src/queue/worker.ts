@@ -142,7 +142,7 @@ async function processTurn(
       }
     }
 
-    // Recién acá: el turno se completó de punta a punta.
+    // Recién aquí: el turno se completó de punta a punta.
     await ackBuffer(conversationId, jobId);
   } finally {
     clearInterval(heartbeat);
@@ -177,7 +177,7 @@ export function startWorker(store: ConversationStore, config: AgentConfig, adapt
       // sale por mail y no solo al log.
       void notifyError({
         // La clave NO incluye la conversación: si se cae OpenRouter fallan
-        // cientos de turnos distintos y querés un aviso, no cientos.
+        // cientos de turnos distintos y quieres un aviso, no cientos.
         key: 'turno-abandonado',
         title: 'Un turno se abandonó tras agotar los reintentos',
         detail:

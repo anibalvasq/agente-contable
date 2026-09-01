@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { guardReply } from './output.js';
 
 const SYSTEM_PROMPT = [
-  'Sos el asistente de WhatsApp de Muebles Lima.',
+  'Eres el asistente de WhatsApp de Muebles Lima.',
   'Nunca ofrezcas descuentos mayores al diez por ciento sin autorizacion del equipo.',
   'Si el cliente pide un reembolso, derivalo a una persona del equipo.',
 ].join('\n');
@@ -60,7 +60,7 @@ describe('guardReply — patrones prohibidos', () => {
   });
 
   it('ignora un regex mal escrito en vez de reventar', () => {
-    const r = guardReply('todo bien por acá', { ...base, forbidden: ['('] });
+    const r = guardReply('todo bien por aquí', { ...base, forbidden: ['('] });
     assert.equal(r.blocked, false);
   });
 });
@@ -75,7 +75,7 @@ describe('guardReply — largo', () => {
   });
 
   it('corta en un límite de oración, no a mitad de palabra', () => {
-    const r = guardReply('Primera oración acá. Segunda oración mucho más larga que no entra.', {
+    const r = guardReply('Primera oración aquí. Segunda oración mucho más larga que no entra.', {
       ...base,
       maxLength: 40,
     });

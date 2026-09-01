@@ -21,7 +21,7 @@ import {
 
 /**
  * Debounce de mensajes. La gente no manda un mensaje, manda cuatro seguidos.
- * Responder a cada uno delata al bot y lo deja sin contexto. Acá se acumulan en
+ * Responder a cada uno delata al bot y lo deja sin contexto. Aquí se acumulan en
  * Redis y se responde UNA vez, MESSAGE_DEBOUNCE_MS después del último.
  *
  * (Solo lo usan los canales por webhook. El canal web responde en línea.)

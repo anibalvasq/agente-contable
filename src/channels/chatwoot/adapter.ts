@@ -14,18 +14,18 @@ const WEBHOOK_PATH = '/webhooks/chatwoot';
  * Chatwoot es un frontend open-source de atención. Conectás WhatsApp a Chatwoot,
  * y Chatwoot te avisa por webhook. Para terminarlo:
  *
- * 1. En Chatwoot: Settings → Integrations → Webhooks → agregá
+ * 1. En Chatwoot: Settings → Integrations → Webhooks → agrega
  *      https://TU-DOMINIO/webhooks/chatwoot   (evento: message_created)
- * 2. Env vars (agregá su validación en un env.ts como el de cloud-api):
+ * 2. Env vars (agrega su validación en un env.ts como el de cloud-api):
  *      CHATWOOT_BASE_URL, CHATWOOT_API_TOKEN, CHATWOOT_ACCOUNT_ID
- * 3. Completá parseInbound (abajo) y sendOutbound (más abajo).
+ * 3. Completa parseInbound (abajo) y sendOutbound (más abajo).
  */
 export const chatwootAdapter: ChannelAdapter = {
   name: 'chatwoot',
   mode: 'queue',
 
   registerRoutes(app: FastifyInstance, ctx: ChannelContext): void {
-    logger.warn('canal chatwoot: STUB. Completá parseInbound/sendOutbound en src/channels/chatwoot/adapter.ts');
+    logger.warn('canal chatwoot: STUB. Completa parseInbound/sendOutbound en src/channels/chatwoot/adapter.ts');
 
     app.post(WEBHOOK_PATH, async (request, reply) => {
       // Un stub sin autenticar NO es inofensivo. Aunque sendOutbound todavía no
@@ -58,8 +58,8 @@ export const chatwootAdapter: ChannelAdapter = {
    *     body:    { labels: ['bot-handoff'] }
    *
    *   Ojo: ese endpoint REEMPLAZA los labels de la conversación, no los suma.
-   *   Si ya usás labels para otra cosa, leelos primero (GET al mismo path) y
-   *   mandá la lista completa. Es el error clásico de esta integración.
+   *   Si ya usas labels para otra cosa, léelos primero (GET al mismo path) y
+   *   manda la lista completa. Es el error clásico de esta integración.
    *
    * Mientras no lo implementes, el handoff igual funciona: el kit apaga el
    * agente y te manda el mail. Lo que falta es que tu equipo lo vea en Chatwoot.
@@ -72,15 +72,15 @@ export const chatwootAdapter: ChannelAdapter = {
     // TODO: POST {CHATWOOT_BASE_URL}/api/v1/accounts/{ACCOUNT_ID}/conversations/{conversationId}/messages
     //   headers: { api_access_token: CHATWOOT_API_TOKEN }
     //   body: { content: input.text, message_type: 'outgoing' }
-    // Chatwoot envía por conversación → usá input.externalConversationId.
+    // Chatwoot envía por conversación → usa input.externalConversationId.
     throw new Error('chatwoot.sendOutbound sin implementar (ver comentarios del archivo)');
   },
 };
 
 /**
  * Chatwoot manda `message_created`. El texto está en `content`, el contacto en
- * `sender`, la conversación en `conversation.id`. Filtrá los salientes
- * (message_type === 'incoming'). Ajustá los campos a tu instancia.
+ * `sender`, la conversación en `conversation.id`. Filtra los salientes
+ * (message_type === 'incoming'). Ajusta los campos a tu instancia.
  */
 function parseInbound(payload: unknown): NormalizedMessage | null {
   const p = payload as {

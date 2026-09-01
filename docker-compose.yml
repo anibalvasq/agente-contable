@@ -1,13 +1,13 @@
 # Desarrollo local.
 #
 #   docker compose up -d        # levanta Postgres + Redis
-#   npm run migrate             # aplica el esquema (solo si usás Postgres)
+#   npm run migrate             # aplica el esquema (solo si usas Postgres)
 #   npm run dev                 # la app corre fuera de Docker (hot reload)
 #
 # Publica los puertos en 127.0.0.1 para que el `npm run dev` del host conecte.
-# Para producción usá docker-compose.coolify.yml (ese NO publica puertos de DB).
+# Para producción usa docker-compose.coolify.yml (ese NO publica puertos de DB).
 #
-# ¿Solo querés probar el agente? No necesitás nada de esto:
+# ¿Solo quieres probar el agente? No necesitas nada de esto:
 #   npm run chat     (terminal)   o   npm run demo   (web, STORE=memory)
 
 services:

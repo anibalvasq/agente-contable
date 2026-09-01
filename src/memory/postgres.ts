@@ -9,7 +9,7 @@ import type {
   UpsertContactInput,
 } from './store.js';
 
-/** Store persistente sobre Postgres. Toda su SQL vive acá, a la vista. */
+/** Store persistente sobre Postgres. Toda su SQL vive aquí, a la vista. */
 export class PostgresStore implements ConversationStore {
   async upsertContact(input: UpsertContactInput): Promise<Contact> {
     const row = await queryOne<ContactRow>(

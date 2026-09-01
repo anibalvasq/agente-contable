@@ -3,12 +3,12 @@
  *
  *   npm run setup
  *
- * Te hace unas preguntas sobre tu negocio y escribe por vos:
+ * Te hace unas preguntas sobre tu negocio y escribe por ti:
  *   - config/agent.yaml  (personalidad + conocimiento del agente)
  *   - .env               (canal + credenciales)
  *
  * A diferencia de otros "generadores", NO inventa código: solo completa la
- * configuración. El agente ya está construido y probado; vos le das su identidad.
+ * configuración. El agente ya está construido y probado; tú le das su identidad.
  */
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
@@ -20,8 +20,8 @@ import { suggestDailyBudget, TOKENS_POR_CONVERSACION } from '../src/agent/budget
 const TONES: Record<string, string> = {
   profesional: 'Profesional, claro y respetuoso.',
   amigable: 'Cercano y amigable, con calidez, sin ser informal de más.',
-  vendedor: 'Persuasivo pero sin presionar: orientás la charla a que el cliente avance.',
-  empatico: 'Empático: reconocés cómo se siente el cliente antes de responder.',
+  vendedor: 'Persuasivo pero sin presionar: orientas la charla a que el cliente avance.',
+  empatico: 'Empático: reconoces cómo se siente el cliente antes de responder.',
 };
 
 const CHANNELS = ['web', 'cloud-api', 'ghl', 'chatwoot', 'ycloud'];
@@ -33,7 +33,7 @@ async function main() {
     return a || def;
   };
 
-  console.log('\n  ✨ Configurá tu agente de WhatsApp — respondé y listo.\n');
+  console.log('\n  ✨ Configura tu agente de WhatsApp — responde y listo.\n');
 
   if (existsSync('config/agent.yaml') || existsSync('.env')) {
     const ok = (await ask('Ya hay config/.env. ¿Sobrescribir? (s/n)', 'n')).toLowerCase();
@@ -46,13 +46,13 @@ async function main() {
 
   const business = await ask('1/10 · Nombre de tu negocio', 'Mi Negocio');
   const whatDoes = await ask('2/10 · ¿A qué se dedica?', 'Vendemos productos y servicios');
-  const purpose = await ask('3/10 · ¿Para qué querés el agente? (responder dudas, agendar, tomar pedidos, calificar leads)', 'responder dudas');
+  const purpose = await ask('3/10 · ¿Para qué quieres el agente? (responder dudas, agendar, tomar pedidos, calificar leads)', 'responder dudas');
   const agentName = await ask('4/10 · Nombre del agente (el que ven tus clientes)', 'Asistente');
   const toneKey = await ask(`5/10 · Tono (${Object.keys(TONES).join(' / ')})`, 'amigable');
   const hours = await ask('6/10 · Horario de atención', 'Lunes a Viernes de 9 a 18 hs');
 
   console.log('\n7/10 · Datos que el agente debe saber (horarios, precios, políticas, FAQ).');
-  console.log('      Escribí uno por línea. Enter vacío para terminar.\n');
+  console.log('      Escribe uno por línea. Enter vacío para terminar.\n');
   const knowledge: string[] = [];
   for (;;) {
     const line = (await rl.question(`      · dato ${knowledge.length + 1}: `)).trim();
@@ -80,7 +80,7 @@ async function main() {
   if (channel === 'cloud-api') {
     channelVars.META_ACCESS_TOKEN = await ask('   · META_ACCESS_TOKEN (Enter para dejar en blanco)', '');
     channelVars.META_PHONE_NUMBER_ID = await ask('   · META_PHONE_NUMBER_ID', '');
-    channelVars.META_VERIFY_TOKEN = await ask('   · META_VERIFY_TOKEN (inventá uno)', 'verify-' + business.toLowerCase().replace(/\s+/g, '-'));
+    channelVars.META_VERIFY_TOKEN = await ask('   · META_VERIFY_TOKEN (inventa uno)', 'verify-' + business.toLowerCase().replace(/\s+/g, '-'));
 
     // Obligatorio: sin App Secret el webhook queda abierto y un tercero puede
     // hacer que tu número le mande WhatsApp a quien quiera. Ver
@@ -96,7 +96,7 @@ async function main() {
   } else if (channel === 'chatwoot' || channel === 'ycloud') {
     // Los stubs también piden secreto: encolan trabajo y hacen correr el LLM.
     console.log('\n   Este canal valida un secreto compartido en el header x-webhook-secret.');
-    console.log('   Configuralo igual del lado de la plataforma.\n');
+    console.log('   Configúralo igual del lado de la plataforma.\n');
     channelVars.WEBHOOK_SECRET = await ask('   · WEBHOOK_SECRET (Enter y te generamos uno)', randomSecret());
   }
 
@@ -105,22 +105,22 @@ async function main() {
   // ── config/agent.yaml ───────────────────────────────────────
   const tone = TONES[toneKey] ?? TONES.amigable;
   const systemPrompt = [
-    `Sos ${agentName}, el asistente de WhatsApp de ${business} (${whatDoes}).`,
+    `Eres ${agentName}, el asistente de WhatsApp de ${business} (${whatDoes}).`,
     '',
-    'Cómo hablás:',
+    'Cómo hablas:',
     `- ${tone}`,
     '- Mensajes cortos, es WhatsApp. Una sola pregunta por mensaje.',
-    '- Nunca digas que sos un bot, una IA ni un asistente virtual.',
+    '- Nunca digas que eres un bot, una IA ni un asistente virtual.',
     '',
     'Tu objetivo:',
     `- ${purpose}.`,
-    '- Usá la herramienta search_knowledge para responder con la info del negocio.',
+    '- Usa la herramienta search_knowledge para responder con la info del negocio.',
     '',
     `Horario de atención: ${hours}.`,
     '',
-    'Qué NUNCA hacés:',
-    '- Inventar datos. Si algo no sale de una herramienta ni del conocimiento, decilo',
-    '  con honestidad y ofrecé conectar con una persona del equipo.',
+    'Qué NUNCA haces:',
+    '- Inventar datos. Si algo no sale de una herramienta ni del conocimiento, dilo',
+    '  con honestidad y ofrece conectar con una persona del equipo.',
   ].join('\n');
 
   const agentYaml = stringify({
@@ -143,11 +143,11 @@ async function main() {
   };
   writeFileSync('.env', applyEnv(base, overrides));
 
-  console.log(`\n  ✅ Listo. Escribí config/agent.yaml y .env.\n`);
+  console.log(`\n  ✅ Listo. Escribe config/agent.yaml y .env.\n`);
   console.log(`     Agente:  ${agentName} · Canal: ${channel}\n`);
-  console.log('  Probalo ahora:');
+  console.log('  Pruébalo ahora:');
   console.log(channel === 'web' ? '     npm run demo        (abre http://localhost:3000)' : '     npm run chat        (chat de prueba en la terminal)');
-  console.log('\n  Editá config/agent.yaml cuando quieras afinar la personalidad o el conocimiento.\n');
+  console.log('\n  Edita config/agent.yaml cuando quieras afinar la personalidad o el conocimiento.\n');
 }
 
 /**
@@ -165,11 +165,11 @@ function guardrailsYaml(conversacionesPorDia: number, business: string): string 
     '# ─────────────────────────────────────────────────────────────',
     `# Límites de gasto y seguridad, calculados para ~${conversacionesPorDia} conversaciones/día.`,
     '#',
-    '# Todo esto tiene default: podés borrar la sección entera y el agente sigue',
-    '# funcionando. Está acá para que lo veas y lo ajustes cuando crezcas.',
+    '# Todo esto tiene default: puedes borrar la sección entera y el agente sigue',
+    '# funcionando. Está aquí para que lo veas y lo ajustes cuando crezcas.',
     '# ─────────────────────────────────────────────────────────────',
     'guardrails:',
-    '  # Corte de emergencia diario. Si tu volumen sube, subí este número:',
+    '  # Corte de emergencia diario. Si tu volumen sube, sube este número:',
     `  #   conversaciones_por_día × ${TOKENS_POR_CONVERSACION} × 3`,
     '  # Si queda corto, a media tarde TODOS tus clientes reciben budget_reply.',
     `  max_tokens_per_day: ${perDay}`,
@@ -183,7 +183,7 @@ function guardrailsYaml(conversacionesPorDia: number, business: string): string 
     `  # ¿Qué cosas NO puede prometer tu agente en nombre de ${business}?`,
     '  # Si la respuesta del modelo matchea alguno de estos patrones, se manda',
     '  # blocked_reply en lugar de lo que dijo.',
-    '  # Descomentá los que apliquen y agregá los tuyos:',
+    '  # Descomenta los que apliquen y agrega los tuyos:',
     '  forbidden_patterns: []',
     "  #  - '\\d{2,3}\\s*%\\s*(de\\s+)?descuento'",
     "  #  - 'te (lo )?(garantizo|aseguro|prometo)'",

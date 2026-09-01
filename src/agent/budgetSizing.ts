@@ -39,7 +39,7 @@ const MINIMO_CONVERSACIONES = 10;
  * Existe para que nadie tenga que entender la aritmética de arriba para
  * configurar el kit.
  *
- * Quedarse CORTO acá es peor que quedarse largo: cuando el tope se cruza, todos
+ * Quedarse CORTO aquí es peor que quedarse largo: cuando el tope se cruza, todos
  * los clientes empiezan a recibir `budget_reply` en lugar del agente. El bot no
  * falla — se apaga solo, en silencio, y nadie sabe por qué.
  */

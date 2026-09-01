@@ -2,8 +2,8 @@
  * Saneamiento de los argumentos que manda el modelo a una herramienta.
  *
  * Segunda línea de defensa: el LLM tiende a rellenar campos aunque no tenga el
- * dato ("" , 0, un valor inventado). No confíes en lo que llega crudo; pasalo
- * por acá. Sale de pruebas reales, no de la teoría.
+ * dato ("" , 0, un valor inventado). No confíes en lo que llega crudo; pásalo
+ * por aquí. Sale de pruebas reales, no de la teoría.
  */
 
 /** El valor que puede usar un enum para "el usuario no lo dijo". */

@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { env } from '../env.js';
 
 /**
- * Cliente del LLM vía OpenRouter (API compatible con OpenAI). Cambiás de modelo
+ * Cliente del LLM vía OpenRouter (API compatible con OpenAI). Cambias de modelo
  * con LLM_MODEL — cualquiera de OpenRouter que soporte tool calling sirve
  * (anthropic/claude-*, openai/gpt-*, google/gemini-*, etc.).
  */

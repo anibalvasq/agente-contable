@@ -1,6 +1,6 @@
 /**
  * Guarda de SALIDA: lo último que pasa antes de que el mensaje llegue al
- * usuario. Es la capa más barata y la que más disgustos evita, porque acá ya no
+ * usuario. Es la capa más barata y la que más disgustos evita, porque aquí ya no
  * importa CÓMO lo convencieron al modelo — importa qué está por decir.
  *
  * Revisa tres cosas:
@@ -14,12 +14,12 @@
  *     secuencias de 8 palabras: una frase suelta en común es normal, ocho
  *     palabras seguidas idénticas no lo son.
  *
- *  3. PATRONES PROHIBIDOS. Los definís vos en agent.yaml. El caso típico es
+ *  3. PATRONES PROHIBIDOS. Los definís tú en agent.yaml. El caso típico es
  *     que el bot no prometa descuentos, reembolsos ni plazos de entrega que no
  *     puede garantizar.
  *
  * Cuando algo se viola, NO se manda la respuesta original: se manda el fallback
- * configurado. Es preferible un "dejame confirmarlo y te aviso" a un bot que
+ * configurado. Es preferible un "déjame confirmarlo y te aviso" a un bot que
  * regala 90% de descuento porque alguien se lo pidió con la frase correcta.
  */
 
@@ -44,7 +44,7 @@ export interface OutputGuardResult {
 }
 
 const DEFAULT_MAX_LENGTH = 4_000;
-const DEFAULT_FALLBACK = 'Dejame confirmar ese dato y te respondo en un momento.';
+const DEFAULT_FALLBACK = 'Déjame confirmar ese dato y te respondo en un momento.';
 
 /** Largo de la secuencia de palabras que se considera "copiado textual". */
 const SHINGLE = 8;

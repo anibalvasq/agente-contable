@@ -25,7 +25,7 @@ async function main() {
   if (config.greeting) console.log(`  ${config.name}: ${config.greeting}\n`);
 
   for (;;) {
-    const userText = (await rl.question('  Vos: ')).trim();
+    const userText = (await rl.question('  Tú: ')).trim();
     if (!userText) continue;
     if (userText === '/salir') break;
     if (userText === '/reset') {

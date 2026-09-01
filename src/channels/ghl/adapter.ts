@@ -55,7 +55,7 @@ export const ghlAdapter: ChannelAdapter = {
    *
    * Endpoint: POST /contacts/{id}/tags  →  { tags: [...] }
    * Verificalo contra tu versión de la API si GHL te devuelve 404: el path de
-   * tags cambió entre versiones y el kit no puede adivinar cuál usás.
+   * tags cambió entre versiones y el kit no puede adivinar cuál usas.
    */
   async handoff({ externalContactId, reason, contactName }: HandoffInput): Promise<void> {
     await requestJson(`${ghlEnv.GHL_API_BASE}/contacts/${externalContactId}/tags`, {

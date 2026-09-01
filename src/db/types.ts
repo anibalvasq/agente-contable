@@ -1,6 +1,6 @@
 /**
  * Tipos genéricos de la capa conversacional. Un agente cualquiera necesita
- * contactos, conversaciones y mensajes con memoria — nada de dominio acá.
+ * contactos, conversaciones y mensajes con memoria — nada de dominio aquí.
  *
  * Los ids del sistema externo (el número de WhatsApp, el id de contacto de
  * GHL, etc.) se guardan como `external_*`, sin atarse a ningún canal.

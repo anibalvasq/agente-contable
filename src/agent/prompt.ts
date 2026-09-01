@@ -9,7 +9,7 @@ import { untrustedContentRule } from './guards/untrusted.js';
  *  2. CONTEXTO — lo que sabemos ahora mismo: el nombre del usuario, la fecha.
  *  3. REGLAS DE SEGURIDAD — cómo tratar el contenido externo.
  *
- * Acá es donde en la Fase 3 entran el resumen de la conversación, la etapa
+ * Aquí es donde en la Fase 3 entran el resumen de la conversación, la etapa
  * actual y los hechos recordados del contacto. Los puntos están marcados.
  */
 export interface PromptContext {
@@ -34,7 +34,7 @@ export function buildSystemPrompt({ config, contactName, fenceId }: PromptContex
 }
 
 /**
- * El bloque que cambia en cada turno. La fecha va acá y no en el YAML por una
+ * El bloque que cambia en cada turno. La fecha va aquí y no en el YAML por una
  * razón práctica: sin ella el modelo inventa el día de hoy, y un agente que
  * agenda o cita horarios con la fecha equivocada es peor que no tenerlo.
  */
@@ -47,7 +47,7 @@ function contexto(contactName: string | null): string {
 
   const quienEs = contactName
     ? `El usuario se llama ${contactName}.`
-    : 'Todavía no sabés el nombre del usuario; preguntáselo con naturalidad si viene al caso.';
+    : 'Todavía no sabes el nombre del usuario; pregúntaselo con naturalidad si viene al caso.';
 
   return ['## Contexto', '', `Ahora mismo son las ${ahora} (hora de Lima).`, quienEs].join('\n');
 }

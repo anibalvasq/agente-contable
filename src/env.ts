@@ -15,6 +15,26 @@ config({ override: true });
  * Si algo falta o viene mal, el proceso muere al arrancar con un mensaje claro,
  * en vez de fallar a mitad de una conversación.
  */
+
+/**
+ * Variable opcional donde el string vacío significa "no configurada".
+ *
+ * Sin esto, copiar .env.example a .env —el primer paso de cualquiera— rompe el
+ * arranque. El archivo de ejemplo trae `ALERT_EMAIL_TO=` sin valor, dotenv lo
+ * carga como cadena vacía, y `.email()` la rechaza: el proceso muere con
+ * "Invalid email" antes de levantar. Lo mismo pasaría con DATABASE_URL vacía.
+ *
+ * Una variable en blanco es una variable que no configuraste, no un error.
+ */
+function opcional<T extends z.ZodTypeAny>(schema: T) {
+  return z.preprocess((v) => (v === '' ? undefined : v), schema.optional());
+}
+
+/** Igual que `opcional`, pero cae en un valor por defecto en vez de undefined. */
+function conDefault<T extends z.ZodTypeAny>(schema: T, valor: z.input<T>) {
+  return z.preprocess((v) => (v === '' || v === undefined ? valor : v), schema);
+}
+
 const schema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -24,17 +44,17 @@ const schema = z
     // Persistencia. 'memory' = todo en RAM (demo, cero configuración).
     // 'postgres' = historial persistente (necesita DATABASE_URL).
     STORE: z.enum(['memory', 'postgres']).default('memory'),
-    DATABASE_URL: z.string().url().optional(),
+    DATABASE_URL: opcional(z.string().url()),
 
     // Cola de mensajes. Solo la usan los canales por webhook (Cloud API, GHL…).
     // El canal 'web' y el chat de terminal procesan en línea, sin Redis.
-    REDIS_URL: z.string().url().default('redis://localhost:6379'),
+    REDIS_URL: conDefault(z.string().url(), 'redis://localhost:6379'),
 
     // Qué frontend está activo. Ver src/channels/registry.ts.
     CHANNEL_ADAPTER: z.enum(['web', 'cloud-api', 'ghl', 'chatwoot', 'ycloud']).default('web'),
 
     // Secreto compartido para validar webhooks (los canales que lo usan).
-    WEBHOOK_SECRET: z.string().optional(),
+    WEBHOOK_SECRET: opcional(z.string()),
 
     /**
      * Exigir que TODOS los webhooks vengan firmados o autenticados.
@@ -45,7 +65,7 @@ const schema = z
      * y —en el canal cloud-api— hacer que tu número de WhatsApp le mande
      * mensajes a quien él elija, porque el destinatario sale del payload.
      *
-     * Ponelo en false SOLO para probar en local con un túnel.
+     * Ponlo en false SOLO para probar en local con un túnel.
      */
     WEBHOOK_REQUIRE_SIGNATURE: z
       .string()
@@ -58,45 +78,45 @@ const schema = z
     RATE_LIMIT_PER_CONTACT: z.coerce.number().int().positive().default(15),
 
     /**
-     * Secreto para firmar los ids de sesión del canal web. Si no lo ponés se
+     * Secreto para firmar los ids de sesión del canal web. Si no lo pones se
      * genera uno al azar al arrancar: las sesiones del demo no sobreviven a un
-     * reinicio, que para un demo está bien. En producción, ponelo.
+     * reinicio, que para un demo está bien. En producción, ponlo.
      */
-    SESSION_SECRET: z.string().optional(),
+    SESSION_SECRET: opcional(z.string()),
 
     // ── Avisos al desarrollador (Resend) ──────────────────────
     /**
      * Un agente que falla en silencio es peor que uno que no existe: el cliente
-     * queda esperando y vos te enterás cuando te reclaman. Con esto, los tres
+     * queda esperando y tú te enteras cuando te reclaman. Con esto, los tres
      * eventos que exigen a una persona (un handoff, un turno abandonado, el
      * presupuesto diario agotado) te llegan por mail.
      *
-     * Si dejás RESEND_API_KEY vacío, no se manda nada: todo queda en los logs.
+     * Si dejas RESEND_API_KEY vacío, no se manda nada: todo queda en los logs.
      * El kit funciona igual — pero enterarte tarde también es una decisión.
      *
      * La key sale de https://resend.com/api-keys
      */
-    RESEND_API_KEY: z.string().optional(),
-    /** A quién le llegan los avisos: vos, el que está desarrollando esto. */
-    ALERT_EMAIL_TO: z.string().email().optional(),
+    RESEND_API_KEY: opcional(z.string()),
+    /** A quién le llegan los avisos: tú, el que está desarrollando esto. */
+    ALERT_EMAIL_TO: opcional(z.string().email()),
     /**
      * Remitente. Tiene que ser de un dominio verificado en Resend.
      * `onboarding@resend.dev` viene listo para probar, pero solo puede
      * escribirle a la casilla con la que creaste la cuenta de Resend.
      */
-    ALERT_EMAIL_FROM: z.string().default('onboarding@resend.dev'),
+    ALERT_EMAIL_FROM: conDefault(z.string(), 'onboarding@resend.dev'),
 
     // ── LLM (OpenRouter) ──────────────────────────────────────
     OPENROUTER_API_KEY: z.string().min(1, 'Falta la API key de OpenRouter'),
-    OPENROUTER_BASE_URL: z.string().url().default('https://openrouter.ai/api/v1'),
-    LLM_MODEL: z.string().default('anthropic/claude-sonnet-4.5'),
+    OPENROUTER_BASE_URL: conDefault(z.string().url(), 'https://openrouter.ai/api/v1'),
+    LLM_MODEL: conDefault(z.string(), 'anthropic/claude-sonnet-4.5'),
     LLM_MAX_TOKENS: z.coerce.number().int().positive().default(1024),
     LLM_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.3),
     APP_URL: z.string().default(''),
     APP_TITLE: z.string().default('wa-agent-starter'),
 
     // ── Agente ────────────────────────────────────────────────
-    AGENT_CONFIG_PATH: z.string().default('config/agent.yaml'),
+    AGENT_CONFIG_PATH: conDefault(z.string(), 'config/agent.yaml'),
     MESSAGE_DEBOUNCE_MS: z.coerce.number().int().nonnegative().default(8_000),
     AGENT_MAX_TOOL_ITERATIONS: z.coerce.number().int().positive().default(6),
     AGENT_HISTORY_LIMIT: z.coerce.number().int().positive().default(40),
@@ -114,7 +134,7 @@ const parsed = schema.safeParse(process.env);
 
 if (!parsed.success) {
   const detalle = parsed.error.issues.map((i) => `  - ${i.path.join('.')}: ${i.message}`).join('\n');
-  console.error(`Configuración inválida. Revisá tu .env:\n${detalle}`);
+  console.error(`Configuración inválida. Revisa tu .env:\n${detalle}`);
   process.exit(1);
 }
 

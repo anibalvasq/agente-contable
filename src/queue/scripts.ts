@@ -3,7 +3,7 @@
  *
  * Vive en su propio módulo sin importar nada — igual que jobId.ts — porque
  * queues.ts abre conexiones a Redis al importarse, y un test de esta lógica no
- * debería levantar Redis. Acá los scripts se pueden probar contra un doble.
+ * debería levantar Redis. Aquí los scripts se pueden probar contra un doble.
  *
  * ─────────────────────────────────────────────────────────────
  *  POR QUÉ LUA Y NO COMANDOS SUELTOS

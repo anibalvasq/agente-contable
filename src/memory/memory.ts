@@ -12,7 +12,7 @@ import type {
 /**
  * Store en RAM. Se pierde al reiniciar el proceso — a propósito: es para el
  * demo (`npm run demo`, `npm run chat`) y para probar sin levantar Postgres.
- * En producción usá STORE=postgres.
+ * En producción usa STORE=postgres.
  */
 export class MemoryStore implements ConversationStore {
   private contactsByExternal = new Map<string, Contact>();

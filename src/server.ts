@@ -38,7 +38,7 @@ export async function buildServer(store: ConversationStore, adapter: ChannelAdap
    *
    * No reemplaza al límite POR CONTACTO (ver channels/ingest.ts): un proveedor
    * legítimo como Meta te manda todo desde un puñado de IPs, así que por IP no
-   * podés distinguir 500 mensajes de un abusador de 500 de clientes distintos.
+   * puedes distinguir 500 mensajes de un abusador de 500 de clientes distintos.
    */
   await app.register(rateLimit, {
     global: true,
@@ -48,7 +48,7 @@ export async function buildServer(store: ConversationStore, adapter: ChannelAdap
     allowList: (req) => req.url === '/health',
     // El statusCode va sí o sí: sin él, el plugin lanza el objeto como error y
     // Fastify lo convierte en un 500, que a un proveedor de webhooks le dice
-    // "tu server está roto, reintentá" en vez de "bajá el ritmo".
+    // "tu server está roto, reintenta" en vez de "baja el ritmo".
     errorResponseBuilder: () => ({ statusCode: 429, error: 'demasiadas solicitudes' }),
   });
 

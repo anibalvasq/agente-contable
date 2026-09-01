@@ -4,12 +4,12 @@ import { logger } from '../logger.js';
  * Limitador de tasa por clave. Dos usos distintos en el kit:
  *
  *  1. Por IP, en las rutas HTTP (lo hace @fastify/rate-limit, ver server.ts).
- *  2. Por CONTACTO, acá — que es el que de verdad protege la billetera.
+ *  2. Por CONTACTO, aquí — que es el que de verdad protege la billetera.
  *     Un atacante con la URL del webhook y una firma válida (o un cliente
  *     legítimo enloquecido) puede mandar 500 mensajes en un minuto. Cada uno
- *     es una llamada al LLM que pagás vos.
+ *     es una llamada al LLM que pagás tú.
  *
- * Ventana FIJA, no deslizante: es menos precisa en los bordes (podés recibir
+ * Ventana FIJA, no deslizante: es menos precisa en los bordes (puedes recibir
  * hasta 2x el límite justo en el cambio de ventana) pero se implementa con un
  * INCR y se entiende de una lectura. Para el caso de uso alcanza y sobra.
  */
@@ -29,7 +29,7 @@ export interface RateLimiter {
 /**
  * Backend en RAM. Sirve para el canal web, el chat de terminal y cualquier
  * despliegue de UNA instancia. Con varias instancias cada una lleva su propia
- * cuenta, así que el límite real es limit × instancias: ahí querés el de Redis.
+ * cuenta, así que el límite real es limit × instancias: ahí quieres el de Redis.
  */
 export class MemoryRateLimiter implements RateLimiter {
   private windows = new Map<string, { count: number; resetAt: number }>();
@@ -63,7 +63,7 @@ export class MemoryRateLimiter implements RateLimiter {
 }
 
 /**
- * Backend en Redis, para cuando corrés varias instancias: todas comparten la
+ * Backend en Redis, para cuando ejecutas varias instancias: todas comparten la
  * cuenta. Se usa solo en los canales por webhook, que ya tienen Redis.
  */
 export class RedisRateLimiter implements RateLimiter {

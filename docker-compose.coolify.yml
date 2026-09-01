@@ -1,6 +1,6 @@
 # Producción — Coolify.
 #
-# En Coolify: New Resource > Docker Compose, apuntá al repo y poné este
+# En Coolify: New Resource > Docker Compose, apunta al repo y pon este
 # archivo en "Docker Compose Location": /docker-compose.coolify.yml
 #
 # Por qué es distinto al docker-compose.yml local:
@@ -12,7 +12,7 @@
 #  - SERVICE_FQDN_APP_3000 es una magic var de Coolify: genera el dominio y
 #    apunta el proxy al puerto 3000.
 #
-# Si usás STORE=memory (sin persistencia), podés borrar el servicio `postgres`
+# Si usas STORE=memory (sin persistencia), puedes borrar el servicio `postgres`
 # y su volumen, y quitar DATABASE_URL y el depends_on de postgres.
 
 services:
@@ -30,11 +30,15 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       # Núcleo
       - STORE=${STORE:-postgres}
-      - CHANNEL_ADAPTER=${CHANNEL_ADAPTER:?elegí un canal: cloud-api|ghl|chatwoot|ycloud|web}
+      - CHANNEL_ADAPTER=${CHANNEL_ADAPTER:?elige un canal: cloud-api|ghl|chatwoot|ycloud|web}
       - DATABASE_URL=postgres://${POSTGRES_USER:-agent}:${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-agent}
       - REDIS_URL=redis://redis:6379
       - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}
-      # Firma obligatoria en producción. No lo pongas en false acá.
+      - WEBHOOK_REQUIRE_SIGNATURE=${WEBHOOK_REQUIRE_SIGNATURE:-true}
+      - RATE_LIMIT_PER_IP=${RATE_LIMIT_PER_IP:-120}
+      - RATE_LIMIT_PER_CONTACT=${RATE_LIMIT_PER_CONTACT:-15}
+      - SESSION_SECRET=${SESSION_SECRET:-}
+      # Firma obligatoria en producción. No lo pongas en false aquí.
       - WEBHOOK_REQUIRE_SIGNATURE=${WEBHOOK_REQUIRE_SIGNATURE:-true}
       - RATE_LIMIT_PER_IP=${RATE_LIMIT_PER_IP:-120}
       - RATE_LIMIT_PER_CONTACT=${RATE_LIMIT_PER_CONTACT:-15}
@@ -51,7 +55,7 @@ services:
       - AGENT_MAX_TOOL_ITERATIONS=${AGENT_MAX_TOOL_ITERATIONS:-6}
       - AGENT_HISTORY_LIMIT=${AGENT_HISTORY_LIMIT:-40}
       - AGENT_REPLY_ENABLED=${AGENT_REPLY_ENABLED:-true}
-      # Vars del canal elegido (ver .env.example). Pasá acá las que use tu adapter,
+      # Vars del canal elegido (ver .env.example). Pasa aquí las que use tu adapter,
       # p.ej. Cloud API: META_ACCESS_TOKEN, META_PHONE_NUMBER_ID, META_VERIFY_TOKEN.
       - META_ACCESS_TOKEN=${META_ACCESS_TOKEN:-}
       - META_PHONE_NUMBER_ID=${META_PHONE_NUMBER_ID:-}
@@ -66,6 +70,11 @@ services:
       - CHATWOOT_API_TOKEN=${CHATWOOT_API_TOKEN:-}
       - CHATWOOT_ACCOUNT_ID=${CHATWOOT_ACCOUNT_ID:-}
       - YCLOUD_API_KEY=${YCLOUD_API_KEY:-}
+      - GHL_HANDOFF_TAG=${GHL_HANDOFF_TAG:-bot-handoff}
+      # Avisos por mail. Sin RESEND_API_KEY todo queda en los logs.
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}
+      - ALERT_EMAIL_FROM=${ALERT_EMAIL_FROM:-onboarding@resend.dev}
       # Avisos por mail al desarrollador. Sin RESEND_API_KEY todo queda en logs.
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}

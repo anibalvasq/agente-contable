@@ -14,10 +14,10 @@ import type { Tool } from '../index.js';
  *  2. Marca la conversación en la plataforma donde trabaja el equipo — una tag
  *     en GHL, un label en Chatwoot. Lo hace el adaptador de canal, porque es el
  *     único que sabe cómo se marca en cada frontend.
- *  3. Te avisa a vos por mail, porque querés saber con qué frecuencia tu agente
+ *  3. Te avisa a tú por mail, porque quieres saber con qué frecuencia tu agente
  *     se rinde y por qué.
  *
- * Si solo hacés la 1, el bot se calla y el cliente queda esperando a alguien
+ * Si solo haces la 1, el bot se calla y el cliente queda esperando a alguien
  * que no sabe que lo están esperando. Ese es el handoff roto más común.
  *
  * IMPORTANTE: reactivar el agente es una decisión HUMANA y deliberada, así que
@@ -27,7 +27,7 @@ import type { Tool } from '../index.js';
  */
 export const escalateToHuman: Tool = {
   // Cambia el estado de la conversación y saca al agente de la jugada: es una
-  // acción con consecuencias reales, aunque no toque plata.
+  // acción con consecuencias reales, aunque no toque dinero.
   sideEffect: 'write',
 
   definition: {
@@ -37,7 +37,7 @@ export const escalateToHuman: Tool = {
       description:
         'Deriva la conversación a una persona del equipo y deja de responder automáticamente. ' +
         'Usala si el usuario pide hablar con un humano, si está molesto o hay un reclamo, ' +
-        'o si te piden algo que no podés resolver con tus herramientas.',
+        'o si te piden algo que no puedes resolver con tus herramientas.',
       parameters: {
         type: 'object',
         properties: {
