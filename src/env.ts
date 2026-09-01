@@ -36,6 +36,56 @@ const schema = z
     // Secreto compartido para validar webhooks (los canales que lo usan).
     WEBHOOK_SECRET: z.string().optional(),
 
+    /**
+     * Exigir que TODOS los webhooks vengan firmados o autenticados.
+     *
+     * Está en true por default y así tiene que quedarse en producción. Un
+     * webhook sin verificar es una puerta abierta: la URL es adivinable, y con
+     * ella un tercero puede inyectar mensajes falsos, gastar tu saldo del LLM
+     * y —en el canal cloud-api— hacer que tu número de WhatsApp le mande
+     * mensajes a quien él elija, porque el destinatario sale del payload.
+     *
+     * Ponelo en false SOLO para probar en local con un túnel.
+     */
+    WEBHOOK_REQUIRE_SIGNATURE: z
+      .string()
+      .default('true')
+      .transform((v) => v.toLowerCase() !== 'false'),
+
+    /** Tope de requests por IP y por minuto en las rutas HTTP. */
+    RATE_LIMIT_PER_IP: z.coerce.number().int().positive().default(120),
+    /** Tope de mensajes por contacto y por minuto. Protege la billetera. */
+    RATE_LIMIT_PER_CONTACT: z.coerce.number().int().positive().default(15),
+
+    /**
+     * Secreto para firmar los ids de sesión del canal web. Si no lo ponés se
+     * genera uno al azar al arrancar: las sesiones del demo no sobreviven a un
+     * reinicio, que para un demo está bien. En producción, ponelo.
+     */
+    SESSION_SECRET: z.string().optional(),
+
+    // ── Avisos al desarrollador (Resend) ──────────────────────
+    /**
+     * Un agente que falla en silencio es peor que uno que no existe: el cliente
+     * queda esperando y vos te enterás cuando te reclaman. Con esto, los tres
+     * eventos que exigen a una persona (un handoff, un turno abandonado, el
+     * presupuesto diario agotado) te llegan por mail.
+     *
+     * Si dejás RESEND_API_KEY vacío, no se manda nada: todo queda en los logs.
+     * El kit funciona igual — pero enterarte tarde también es una decisión.
+     *
+     * La key sale de https://resend.com/api-keys
+     */
+    RESEND_API_KEY: z.string().optional(),
+    /** A quién le llegan los avisos: vos, el que está desarrollando esto. */
+    ALERT_EMAIL_TO: z.string().email().optional(),
+    /**
+     * Remitente. Tiene que ser de un dominio verificado en Resend.
+     * `onboarding@resend.dev` viene listo para probar, pero solo puede
+     * escribirle a la casilla con la que creaste la cuenta de Resend.
+     */
+    ALERT_EMAIL_FROM: z.string().default('onboarding@resend.dev'),
+
     // ── LLM (OpenRouter) ──────────────────────────────────────
     OPENROUTER_API_KEY: z.string().min(1, 'Falta la API key de OpenRouter'),
     OPENROUTER_BASE_URL: z.string().url().default('https://openrouter.ai/api/v1'),

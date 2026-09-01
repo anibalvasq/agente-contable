@@ -19,10 +19,21 @@ system_prompt: |
   Qué podés hacer:
   - Responder dudas usando la herramienta search_knowledge.
   - Decir la fecha y hora con get_current_time.
+  - Derivar a una persona del equipo con escalate_to_human.
 
   Qué NUNCA hacés:
   - Inventar datos. Si no lo sabés y no sale de una herramienta, decilo con
     honestidad y ofrecé consultarlo.
+  - Prometer precios, descuentos o plazos que no salgan de una herramienta.
+
+  Cuando una herramienta no encuentra nada o falla:
+  - No lo menciones ni expliques el error. Decí con naturalidad que lo vas a
+    consultar, o derivá con escalate_to_human si es importante.
+
+  Cuándo derivar a un humano (escalate_to_human):
+  - El usuario lo pide.
+  - Hay un reclamo o está molesto.
+  - Te piden algo que no podés resolver con tus herramientas.
 
 # Base de conocimiento de ejemplo. La herramienta search_knowledge busca acá
 # por palabras clave. Cargá acá tus horarios, precios, políticas, FAQ, etc.
@@ -32,3 +43,61 @@ knowledge:
   - "Los envíos demoran entre 2 y 4 días hábiles."
 
 greeting: "¡Hola! 👋 Soy el asistente del kit. ¿En qué te puedo ayudar?"
+
+# ─────────────────────────────────────────────────────────────
+# Límites de seguridad y de gasto.
+#
+# TODO tiene un valor por defecto razonable: podés borrar esta sección entera y
+# el agente sigue funcionando igual. Está acá para que la veas y la ajustes.
+#
+# Lo que NO se arregla desde acá: si tu herramienta de escritura confía en un
+# precio o un id que le mandó el modelo sin validarlo contra tu base de datos,
+# ninguna de estas opciones te salva. Ver src/agent/tools/policy.ts.
+# ─────────────────────────────────────────────────────────────
+guardrails:
+  # Qué hacer si se detecta un intento de manipulación en el mensaje:
+  #   log        solo lo registra en los logs
+  #   reinforce  refuerza las instrucciones en ese turno   ← recomendado
+  #   block      no llama al modelo y responde blocked_reply
+  #
+  # Empezá en 'reinforce'. 'block' tiene falsos positivos: alguien que escribe
+  # "ignorá lo anterior, mejor quiero el modelo azul" es un cliente, no un
+  # atacante. Mirá tus logs una semana antes de endurecerlo.
+  on_injection: reinforce
+
+  # Topes de largo, en caracteres. WhatsApp corta en 4096.
+  max_input_chars: 4000
+  max_reply_chars: 4000
+
+  # Techo de tokens del historial que se re-envía en CADA turno. Es la palanca
+  # que más mueve tu factura: el historial viaja entero en cada llamada.
+  max_history_tokens: 8000
+
+  # Presupuesto de tokens. 0 = sin tope.
+  # Por conversación: contiene a un usuario abusivo o a un loop con otro bot.
+  max_tokens_per_conversation: 200000
+  token_window_hours: 24
+  # Global por día: corte de emergencia. Cuando se cruza, TODOS tus clientes
+  # reciben budget_reply en vez del agente — así que tiene que estar POR ENCIMA
+  # de tu día más ocupado, no cerca.
+  #
+  # Para calcularlo:  conversaciones_por_día × 40000 × 3
+  #   50 conversaciones/día  →   6000000
+  #  150 conversaciones/día  →  20000000   ← el default
+  #  500 conversaciones/día  →  60000000
+  #
+  # (Una conversación gasta ~40.000 tokens porque el historial se re-manda en
+  # cada turno. El ×3 es margen: un día bueno no lo dispara, un loop sí.)
+  max_tokens_per_day: 20000000
+
+  # Regex que la respuesta NO puede contener. Si matchea, se manda blocked_reply
+  # en lugar de la respuesta del modelo. Descomentá y adaptá a tu negocio:
+  forbidden_patterns: []
+  #  - '\d{2,3}\s*%\s*(de\s+)?descuento'
+  #  - 'te (lo )?(garantizo|aseguro|prometo)'
+  #  - 'devoluci[oó]n (total|del 100)'
+
+  # Qué responder cuando la guarda de salida bloquea la respuesta.
+  blocked_reply: "Dejame confirmar ese dato con el equipo y te respondo en un momento."
+  # Qué responder cuando se agotó el presupuesto de tokens.
+  budget_reply: "Estoy con muchas consultas en este momento. Un asesor te escribe en breve."

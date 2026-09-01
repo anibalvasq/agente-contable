@@ -7,6 +7,10 @@ import type { ConversationStore } from '../../memory/store.js';
  *
  * Para agregar la tuya: copiá una de tools/examples/, registrala en el array
  * `defaultTools` de abajo, y listo. El runner se encarga del resto.
+ *
+ * Las DOS declaraciones que tenés que pensar bien son `sideEffect` y
+ * `returnsUntrustedContent`. No son burocracia: de ellas dependen las defensas
+ * del kit, y equivocarlas las apaga en silencio.
  */
 
 /** Lo que recibe una herramienta además de sus argumentos. */
@@ -16,15 +20,55 @@ export interface ToolContext {
   contactName: string | null;
   /** Por si tu herramienta necesita leer/escribir estado. */
   store: ConversationStore;
+  /**
+   * Patrones de manipulación detectados en el mensaje del usuario en este
+   * turno. Vacío = mensaje limpio. La policy lo usa para frenar las
+   * herramientas de escritura cuando el turno viene envenenado.
+   */
+  injectionFlags: string[];
 }
+
+/**
+ * ¿Esta herramienta cambia algo del mundo real?
+ *
+ *  - 'read'  consulta y devuelve datos. Si se ejecuta de más, no pasa nada.
+ *  - 'write' crea un pedido, cobra, agenda, manda un mail, aplica un descuento.
+ *            Si se ejecuta de más, tenés un problema con un cliente real.
+ *
+ * Marcá 'write' ante la duda. Las de escritura pasan por tools/policy.ts antes
+ * de ejecutarse.
+ */
+export type ToolSideEffect = 'read' | 'write';
 
 export interface Tool {
   definition: OpenAI.Chat.Completions.ChatCompletionTool;
+
+  /** Ver ToolSideEffect. Ante la duda, 'write'. */
+  sideEffect: ToolSideEffect;
+
+  /**
+   * ¿El resultado puede contener texto escrito por alguien de afuera?
+   *
+   * Marcá true si tu herramienta lee: una web, una nota de CRM, un mail, un
+   * PDF que mandó el cliente, una fila de un Sheet compartido, la respuesta de
+   * una API de terceros. Todo eso lo escribió una persona que no sos vos, y
+   * puede traer instrucciones dirigidas al modelo.
+   *
+   * Con true, el runner envuelve el resultado en una valla de datos externos
+   * (ver guards/untrusted.ts) para que el modelo lo lea como información y no
+   * como órdenes. Es el caso MÁS COMÚN y el que más se olvida.
+   *
+   * Dejalo en false solo si el contenido sale enteramente de vos: tu
+   * agent.yaml, tu código, tu base de datos con datos que vos escribiste.
+   */
+  returnsUntrustedContent?: boolean;
+
   run(args: Record<string, unknown>, ctx: ToolContext): Promise<unknown>;
 }
 
+import { escalateToHuman } from './examples/escalateToHuman.js';
 import { getCurrentTime } from './examples/getCurrentTime.js';
 import { searchKnowledge } from './examples/searchKnowledge.js';
 
 /** Las herramientas que el agente tiene disponibles. Sumá las tuyas acá. */
-export const defaultTools: Tool[] = [getCurrentTime, searchKnowledge];
+export const defaultTools: Tool[] = [getCurrentTime, searchKnowledge, escalateToHuman];

@@ -2,8 +2,8 @@ import type { FastifyInstance } from 'fastify';
 import { env } from '../../env.js';
 import { logger } from '../../logger.js';
 import { requestJson } from '../../integrations/http.js';
-import { sharedSecretValid } from '../../security.js';
-import type { ChannelAdapter, ChannelContext, SendOutboundInput } from '../types.js';
+import { sharedSecretValid } from '../../security/index.js';
+import type { ChannelAdapter, ChannelContext, HandoffInput, SendOutboundInput } from '../types.js';
 import { ghlEnv } from './env.js';
 import { parseInbound } from './parse.js';
 
@@ -46,5 +46,28 @@ export const ghlAdapter: ChannelAdapter = {
       context: 'ghl.send',
     });
     return { messageId: res.messageId };
+  },
+
+  /**
+   * En GHL el handoff se dispara con una ETIQUETA en el contacto. Es el
+   * mecanismo que el equipo ya conoce: la tag alimenta Smart Lists y dispara
+   * workflows, así que el vendedor se entera donde ya está trabajando.
+   *
+   * Endpoint: POST /contacts/{id}/tags  →  { tags: [...] }
+   * Verificalo contra tu versión de la API si GHL te devuelve 404: el path de
+   * tags cambió entre versiones y el kit no puede adivinar cuál usás.
+   */
+  async handoff({ externalContactId, reason, contactName }: HandoffInput): Promise<void> {
+    await requestJson(`${ghlEnv.GHL_API_BASE}/contacts/${externalContactId}/tags`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${ghlEnv.GHL_API_TOKEN}`, Version: ghlEnv.GHL_API_VERSION },
+      body: { tags: [ghlEnv.GHL_HANDOFF_TAG] },
+      context: 'ghl.handoff',
+    });
+
+    logger.info(
+      { contactId: externalContactId, contactName, tag: ghlEnv.GHL_HANDOFF_TAG, reason },
+      'handoff: contacto etiquetado en GHL',
+    );
   },
 };

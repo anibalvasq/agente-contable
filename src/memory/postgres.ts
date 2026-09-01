@@ -117,15 +117,15 @@ export class PostgresStore implements ConversationStore {
     await query('UPDATE conversations SET last_message_at = now() WHERE id = $1', [conversationId]);
   }
 
-  async markEventSeen(provider: string, externalId: string): Promise<boolean> {
+  async markEventSeen(provider: string, externalId: string, payload: Record<string, unknown> = {}): Promise<boolean> {
     const row = await queryOne<{ id: string }>(
       `
       INSERT INTO webhook_events (provider, external_id, payload)
-      VALUES ($1, $2, '{}'::jsonb)
+      VALUES ($1, $2, COALESCE($3::jsonb, '{}'::jsonb))
       ON CONFLICT (provider, external_id) WHERE external_id IS NOT NULL DO NOTHING
       RETURNING id
       `,
-      [provider, externalId],
+      [provider, externalId, JSON.stringify(payload)],
     );
     return Boolean(row);
   }

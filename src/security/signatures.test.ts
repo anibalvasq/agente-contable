@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
-import { hmacSha256Valid, safeEqual, sharedSecretValid } from './security.js';
+import { hmacSha256Valid, safeEqual, sharedSecretValid } from './signatures.js';
 
 describe('safeEqual', () => {
   it('compara sin filtrar por tiempo', () => {

@@ -7,6 +7,16 @@ export const JOB_REPLY = 'reply';
 export interface MessageJob {
   conversationId: string;
   contactId: string;
+  /**
+   * La respuesta ya generada, si el turno llegó a producirla. La guardamos en
+   * el job para que un reintento por fallo de ENVÍO no vuelva a llamar al
+   * modelo: sería pagar dos veces y escribir dos veces en el historial.
+   *
+   * undefined = todavía no se generó. null = se generó y no hubo nada que decir.
+   */
+  reply?: string | null;
+  /** Cuántas veces se reprogramó esperando el lock. Ver worker.ts. */
+  rescheduled?: number;
 }
 
 /**

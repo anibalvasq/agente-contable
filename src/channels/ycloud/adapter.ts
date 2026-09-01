@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify';
+import { env } from '../../env.js';
 import { logger } from '../../logger.js';
+import { sharedSecretValid } from '../../security/index.js';
 import type { ChannelAdapter, ChannelContext, NormalizedMessage, SendOutboundInput } from '../types.js';
 
 const WEBHOOK_PATH = '/webhooks/ycloud';
@@ -24,9 +26,23 @@ export const ycloudAdapter: ChannelAdapter = {
 
   registerRoutes(app: FastifyInstance, ctx: ChannelContext): void {
     logger.warn('canal ycloud: STUB. Completá parseInbound/sendOutbound en src/channels/ycloud/adapter.ts');
+
     app.post(WEBHOOK_PATH, async (request, reply) => {
+      // Un stub sin autenticar NO es inofensivo. Aunque sendOutbound todavía no
+      // esté implementado, este webhook crea contactos, encola trabajos y hace
+      // correr el LLM: cualquiera que conozca la URL puede gastarte el saldo.
+      // Por eso pide el mismo secreto compartido que el canal de GHL.
+      if (!sharedSecretValid(request.headers['x-webhook-secret'], env.WEBHOOK_SECRET)) {
+        if (env.WEBHOOK_REQUIRE_SIGNATURE) {
+          logger.warn({ ip: request.ip }, 'webhook ycloud rechazado: secreto inválido');
+          return reply.code(401).send({ error: 'no autorizado' });
+        }
+        logger.warn({ ip: request.ip }, 'webhook ycloud SIN VERIFICAR (WEBHOOK_REQUIRE_SIGNATURE=false)');
+      }
+
       const message = parseInbound(request.body);
       if (message) await ctx.enqueue(message);
+      // 200 aunque el payload venga incompleto: un 4xx haría reintentar para siempre.
       return reply.code(200).send({ ok: true });
     });
   },

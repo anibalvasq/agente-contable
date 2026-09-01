@@ -109,6 +109,8 @@ export class MemoryStore implements ConversationStore {
     if (c) c.lastMessageAt = Date.now();
   }
 
+  // El store en RAM ignora el payload de auditoría: es para el demo, y no hay
+  // nada que auditar en un proceso que pierde todo al reiniciar.
   async markEventSeen(provider: string, externalId: string): Promise<boolean> {
     const key = `${provider}:${externalId}`;
     if (this.seenEvents.has(key)) return false;

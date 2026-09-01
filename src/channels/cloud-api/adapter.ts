@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { logger } from '../../logger.js';
 import { requestJson } from '../../integrations/http.js';
-import { hmacSha256Valid } from '../../security.js';
+import { hmacSha256Valid, sharedSecretValid } from '../../security/index.js';
 import type { RequestWithRawBody } from '../../server.js';
 import type { ChannelAdapter, ChannelContext, SendOutboundInput } from '../types.js';
 import { cloudEnv } from './env.js';
@@ -25,7 +25,9 @@ export const cloudApiAdapter: ChannelAdapter = {
     // GET: el handshake de verificación que Meta hace una vez al configurar.
     app.get(WEBHOOK_PATH, async (request, reply) => {
       const q = request.query as Record<string, string>;
-      if (q['hub.mode'] === 'subscribe' && q['hub.verify_token'] === cloudEnv.META_VERIFY_TOKEN) {
+      // safeEqual y no ===: el verify token es un secreto, y comparar con ===
+      // filtra su contenido carácter por carácter según cuánto tarda el rechazo.
+      if (q['hub.mode'] === 'subscribe' && sharedSecretValid(q['hub.verify_token'], cloudEnv.META_VERIFY_TOKEN)) {
         return reply.code(200).send(q['hub.challenge']);
       }
       return reply.code(403).send('forbidden');
@@ -36,9 +38,15 @@ export const cloudApiAdapter: ChannelAdapter = {
       if (cloudEnv.META_APP_SECRET) {
         const raw = (request as RequestWithRawBody).rawBody ?? Buffer.from('');
         if (!hmacSha256Valid(raw, request.headers['x-hub-signature-256'], cloudEnv.META_APP_SECRET)) {
-          logger.warn('webhook cloud-api rechazado: firma HMAC inválida');
+          logger.warn({ ip: request.ip }, 'webhook cloud-api rechazado: firma HMAC inválida');
           return reply.code(401).send({ error: 'firma inválida' });
         }
+      }
+      // Sin secreto solo se llega acá con WEBHOOK_REQUIRE_SIGNATURE=false, que
+      // env.ts ya obligó a poner de forma explícita. Lo dejamos anotado en cada
+      // request para que nadie descubra en producción que estaba así.
+      else {
+        logger.warn({ ip: request.ip }, 'webhook cloud-api SIN VERIFICAR (WEBHOOK_REQUIRE_SIGNATURE=false)');
       }
 
       // Respondemos 200 rápido y encolamos: Meta reintenta si tardamos.

@@ -65,8 +65,16 @@ export interface ConversationStore {
   /**
    * Idempotencia de webhooks. Devuelve true si el evento es NUEVO (procesalo);
    * false si ya lo habíamos visto (es un reintento del proveedor).
+   *
+   * `payload` se guarda como auditoría. La tabla webhook_events existía desde
+   * la primera migración con ese propósito, pero se insertaba siempre `{}`: el
+   * día que algo salía mal no había con qué reconstruir qué había llegado.
+   *
+   * No guardes acá el texto del mensaje: ya está en `messages`, y duplicar
+   * datos personales en una tabla que nadie purga es pedir problemas. Van los
+   * identificadores y los metadatos del evento.
    */
-  markEventSeen(provider: string, externalId: string): Promise<boolean>;
+  markEventSeen(provider: string, externalId: string, payload?: Record<string, unknown>): Promise<boolean>;
 
   close(): Promise<void>;
 }

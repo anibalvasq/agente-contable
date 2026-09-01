@@ -8,19 +8,42 @@ Si el usuario quiere crear su agente desde cero, corré el comando `/build-agent
 ## Arquitectura (lo mínimo para orientarte)
 - El **cerebro** (agente) es siempre el mismo. Lo que cambia por proyecto es el **canal** (por dónde entran los mensajes), las **herramientas** y la **personalidad**.
 - `src/channels/` — adaptadores de canal (la abstracción clave, `ChannelAdapter`): `web`, `cloud-api`, `ghl` (completos), `chatwoot`, `ycloud` (stubs). Se elige con `CHANNEL_ADAPTER`.
-- `src/agent/` — `runner.ts` (loop de tool-calling), `llm.ts` (OpenRouter), `prompt.ts`, `tools/`.
+- `src/agent/` — `runner.ts` (loop de tool-calling), `llm.ts` (OpenRouter), `prompt.ts`, `tools/`, `guards/`, `budget.ts`, `tokens.ts`.
 - `src/queue/` — buffer con debounce + worker (canales por webhook). El canal `web` procesa en línea, sin Redis.
 - `src/memory/` — store: `postgres` o `memory` (elegido con `STORE`).
-- `config/agent.yaml` — identidad y conocimiento del agente (editable por no-devs).
+- `src/security/` — firmas HMAC de webhooks, rate limit, sesiones firmadas.
+- `src/notifications/` — avisos: al equipo por el canal (etiqueta en el CRM) y al desarrollador por mail (Resend).
+- `config/agent.yaml` — identidad, conocimiento y `guardrails` (editable por no-devs).
+
+## Seguridad — leé esto antes de tocar el agente
+
+El kit tiene cuatro capas de defensa. Si agregás código, respetalas:
+
+1. **`src/agent/guards/input.ts`** — normaliza el mensaje y marca intentos de manipulación.
+2. **`src/agent/guards/untrusted.ts`** — vallado de contenido externo. **La regla más importante del repo.**
+3. **`src/agent/tools/policy.ts`** — frena las herramientas de escritura.
+4. **`src/agent/guards/output.ts`** — revisa la respuesta antes de enviarla.
+
+Reglas que no se negocian:
+
+- **Nunca metas instrucciones dentro de un payload de herramienta.** Los `run()` devuelven DATOS (`{ error: 'la_herramienta_fallo' }`), no órdenes ("no se lo menciones al usuario"). Si el modelo aprende que los payloads traen órdenes, va a obedecer también las que le meta un atacante en una nota del CRM. Qué hacer ante un error se define una sola vez, en el `system_prompt` de `agent.yaml`.
+- **Toda herramienta nueva declara `sideEffect`.** `'write'` ante la duda.
+- **`returnsUntrustedContent: true`** si el resultado puede traer texto escrito por un tercero (web, CRM, PDF del cliente, API externa, Sheet compartido). Es el caso más común y el que más se olvida.
+- **Las herramientas de escritura validan sus argumentos contra la base de datos**, nunca confían en el número, precio o id que mandó el modelo. Ninguna guarda cubre esto.
+- **El handoff no es solo apagar el bot.** `escalate_to_human` apaga el agente, marca la conversación en la plataforma del equipo (la tag de GHL, el label de Chatwoot) y avisa por mail. Si agregás un canal, implementá `handoff` con el mecanismo de etiquetas de esa plataforma — si solo apagás el bot, el cliente queda esperando a alguien que no sabe que lo espera.
+- **Ningún aviso automático sin freno.** Todo lo que mande mails va por `notifications/`, que agrupa por clave y no repite dentro de 15 minutos. Un `sendAlert` por cada error convierte una caída de diez minutos en cientos de mails.
+- **Ningún webhook sin autenticar.** Firma HMAC (cloud-api) o secreto compartido (el resto), incluso en los stubs: encolan trabajo y hacen correr el LLM.
 
 ## Tareas comunes
 - **Cambiar la personalidad** → editá `config/agent.yaml` (nada de código).
-- **Agregar una herramienta** → copiá un archivo de `src/agent/tools/examples/`, definí `definition` + `run`, y sumalo a `defaultTools` en `src/agent/tools/index.ts`.
-- **Agregar/terminar un canal** → implementá la interfaz de `src/channels/types.ts` y registralo en `src/channels/registry.ts`. Los stubs `chatwoot/` y `ycloud/` son plantillas.
+- **Ajustar límites de gasto o guardas** → sección `guardrails` de `config/agent.yaml`.
+- **Agregar una herramienta** → copiá un archivo de `src/agent/tools/examples/`, definí `sideEffect`, `returnsUntrustedContent`, `definition` y `run`, y sumalo a `defaultTools` en `src/agent/tools/index.ts`.
+- **Agregar/terminar un canal** → implementá la interfaz de `src/channels/types.ts` y registralo en `src/channels/registry.ts`. Los stubs `chatwoot/` y `ycloud/` son plantillas. **Empezá por la verificación del webhook.**
 - **Probar** → `npm run demo` (web) o `npm run chat` (terminal). Ambos corren sin Postgres ni WhatsApp.
 - **Verificar** → `npm run typecheck` y `npm test`.
 
 ## Reglas
 - No pongas secretos en el código ni los commitees; van en `.env` (gitignoreado).
 - Mantené el estilo: identificadores en inglés, comentarios y docs en español.
+- Los comentarios explican **por qué**, no qué. Este repo se lee para aprender: si arreglás un bug sutil, dejá anotado cuál era.
 - Antes de dar por hecho un cambio, corré `npm run typecheck` y `npm test`.

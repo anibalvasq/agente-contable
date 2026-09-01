@@ -34,6 +34,12 @@ services:
       - DATABASE_URL=postgres://${POSTGRES_USER:-agent}:${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-agent}
       - REDIS_URL=redis://redis:6379
       - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}
+      # Firma obligatoria en producción. No lo pongas en false acá.
+      - WEBHOOK_REQUIRE_SIGNATURE=${WEBHOOK_REQUIRE_SIGNATURE:-true}
+      - RATE_LIMIT_PER_IP=${RATE_LIMIT_PER_IP:-120}
+      - RATE_LIMIT_PER_CONTACT=${RATE_LIMIT_PER_CONTACT:-15}
+      # Sin esto, cada redeploy le borra la sesión a todo el mundo (canal web).
+      - SESSION_SECRET=${SESSION_SECRET:?falta SESSION_SECRET: generalo con openssl rand -hex 32}
       # LLM (OpenRouter)
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:?falta OPENROUTER_API_KEY}
       - LLM_MODEL=${LLM_MODEL:-anthropic/claude-sonnet-4.5}
@@ -50,13 +56,20 @@ services:
       - META_ACCESS_TOKEN=${META_ACCESS_TOKEN:-}
       - META_PHONE_NUMBER_ID=${META_PHONE_NUMBER_ID:-}
       - META_VERIFY_TOKEN=${META_VERIFY_TOKEN:-}
+      # Obligatorio con CHANNEL_ADAPTER=cloud-api: sin firma, tu número puede
+      # ser usado para mandarle mensajes a cualquiera.
       - META_APP_SECRET=${META_APP_SECRET:-}
       - GHL_API_TOKEN=${GHL_API_TOKEN:-}
       - GHL_LOCATION_ID=${GHL_LOCATION_ID:-}
+      - GHL_HANDOFF_TAG=${GHL_HANDOFF_TAG:-bot-handoff}
       - CHATWOOT_BASE_URL=${CHATWOOT_BASE_URL:-}
       - CHATWOOT_API_TOKEN=${CHATWOOT_API_TOKEN:-}
       - CHATWOOT_ACCOUNT_ID=${CHATWOOT_ACCOUNT_ID:-}
       - YCLOUD_API_KEY=${YCLOUD_API_KEY:-}
+      # Avisos por mail al desarrollador. Sin RESEND_API_KEY todo queda en logs.
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}
+      - ALERT_EMAIL_FROM=${ALERT_EMAIL_FROM:-onboarding@resend.dev}
     depends_on:
       postgres:
         condition: service_healthy

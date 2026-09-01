@@ -42,6 +42,15 @@ export interface SendOutboundInput {
   externalConversationId?: string | null;
 }
 
+/** Lo que necesita un canal para marcar una conversación como "la toma un humano". */
+export interface HandoffInput {
+  externalContactId: string;
+  externalConversationId?: string | null;
+  contactName?: string | null;
+  /** Por qué se derivó, en una frase. Lo lee el equipo, no el cliente. */
+  reason: string;
+}
+
 export interface ChannelAdapter {
   readonly name: string;
   /**
@@ -55,4 +64,24 @@ export interface ChannelAdapter {
   registerRoutes(app: FastifyInstance, ctx: ChannelContext): void | Promise<void>;
   /** Envía la respuesta del agente por el canal. Los inline pueden dejarlo no-op. */
   sendOutbound(input: SendOutboundInput): Promise<{ messageId?: string }>;
+
+  /**
+   * Marca la conversación en la plataforma para que el equipo la vea y la
+   * atienda. OPCIONAL, y ese "opcional" no es pereza: no todos los canales
+   * tienen dónde marcarla.
+   *
+   * En la práctica el handoff se dispara con ETIQUETAS, y cada frontend tiene
+   * las suyas:
+   *
+   *   ghl       una tag en el contacto → dispara tus workflows y aparece en
+   *             el filtro que ya usa tu equipo.
+   *   chatwoot  un label en la conversación (+ cambiar el assignee).
+   *   cloud-api nada: la API de Meta no tiene CRM detrás. El único registro
+   *             es el agent_enabled del kit y el mail al desarrollador.
+   *
+   * Apagar el agente (`agent_enabled = false`) lo hace el kit siempre, en
+   * `escalate_to_human`. Esto es lo OTRO: que el humano se entere, donde
+   * trabaja. Un handoff que solo apaga el bot deja al cliente esperando.
+   */
+  handoff?(input: HandoffInput): Promise<void>;
 }

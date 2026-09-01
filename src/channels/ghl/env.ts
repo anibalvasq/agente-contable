@@ -12,6 +12,17 @@ const schema = z.object({
   GHL_LOCATION_ID: z.string().min(1, 'Falta GHL_LOCATION_ID'),
   GHL_API_BASE: z.string().url().default('https://services.leadconnectorhq.com'),
   GHL_API_VERSION: z.string().default('2021-07-28'),
+
+  /**
+   * La etiqueta que se le pone al contacto cuando el agente deriva a un humano.
+   *
+   * Es LA pieza de integración del handoff en GHL: el equipo no mira logs, mira
+   * su lista de contactos. Con esta tag armás un Smart List, disparás un
+   * workflow que le notifica al vendedor, o simplemente la ves en el contacto.
+   *
+   * Poné la que ya use tu operación. Si no tenés ninguna, creá esta.
+   */
+  GHL_HANDOFF_TAG: z.string().default('bot-handoff'),
 });
 
 const parsed = schema.safeParse(process.env);

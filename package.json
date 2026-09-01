@@ -15,10 +15,11 @@
     "chat": "tsx scripts/chat.ts",
     "demo": "cross-env CHANNEL_ADAPTER=web STORE=memory tsx watch src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test \"src/**/*.test.ts\""
+    "test": "cross-env OPENROUTER_API_KEY=test-key STORE=memory node --import tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
-    "@fastify/static": "^8.0.1",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/static": "^10.1.3",
     "bullmq": "^5.12.0",
     "dotenv": "^16.4.5",
     "fastify": "^5.0.0",
@@ -33,6 +34,7 @@
     "@types/node": "^20.14.0",
     "@types/pg": "^8.11.6",
     "cross-env": "^7.0.3",
+    "ioredis-mock": "^8.13.1",
     "pino-pretty": "^11.2.2",
     "tsx": "^4.16.2",
     "typescript": "^5.5.4"

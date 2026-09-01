@@ -37,7 +37,10 @@
     </form>
 
     <script>
-      const sessionId = 'web-' + Math.random().toString(36).slice(2);
+      // El id de sesión lo emite y firma el SERVER: el cliente solo lo guarda
+      // y lo devuelve. Uno inventado acá no valida la firma y el server abre
+      // una sesión nueva (ver src/channels/web/adapter.ts).
+      let sessionId = sessionStorage.getItem('wa-agent-session') || null;
       const log = document.getElementById('log');
       const form = document.getElementById('form');
       const input = document.getElementById('text');
@@ -69,6 +72,10 @@
             body: JSON.stringify({ sessionId, text }),
           });
           const data = await res.json();
+          if (data.sessionId) {
+            sessionId = data.sessionId;
+            sessionStorage.setItem('wa-agent-session', sessionId);
+          }
           typing.textContent = data.reply || '(sin respuesta)';
         } catch (err) {
           typing.textContent = 'Error de red: ' + err.message;

@@ -5,6 +5,9 @@ import type { Tool } from '../index.js';
  * Devuelve la fecha y hora actual.
  */
 export const getCurrentTime: Tool = {
+  sideEffect: 'read',
+  returnsUntrustedContent: false,
+
   definition: {
     type: 'function',
     function: {

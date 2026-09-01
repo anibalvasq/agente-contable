@@ -1,6 +1,8 @@
 import type { FastifyInstance } from 'fastify';
+import { env } from '../../env.js';
 import { logger } from '../../logger.js';
-import type { ChannelAdapter, ChannelContext, NormalizedMessage, SendOutboundInput } from '../types.js';
+import { sharedSecretValid } from '../../security/index.js';
+import type { ChannelAdapter, ChannelContext, HandoffInput, NormalizedMessage, SendOutboundInput } from '../types.js';
 
 const WEBHOOK_PATH = '/webhooks/chatwoot';
 
@@ -24,11 +26,46 @@ export const chatwootAdapter: ChannelAdapter = {
 
   registerRoutes(app: FastifyInstance, ctx: ChannelContext): void {
     logger.warn('canal chatwoot: STUB. Completá parseInbound/sendOutbound en src/channels/chatwoot/adapter.ts');
+
     app.post(WEBHOOK_PATH, async (request, reply) => {
+      // Un stub sin autenticar NO es inofensivo. Aunque sendOutbound todavía no
+      // esté implementado, este webhook crea contactos, encola trabajos y hace
+      // correr el LLM: cualquiera que conozca la URL puede gastarte el saldo.
+      // Por eso pide el mismo secreto compartido que el canal de GHL.
+      if (!sharedSecretValid(request.headers['x-webhook-secret'], env.WEBHOOK_SECRET)) {
+        if (env.WEBHOOK_REQUIRE_SIGNATURE) {
+          logger.warn({ ip: request.ip }, 'webhook chatwoot rechazado: secreto inválido');
+          return reply.code(401).send({ error: 'no autorizado' });
+        }
+        logger.warn({ ip: request.ip }, 'webhook chatwoot SIN VERIFICAR (WEBHOOK_REQUIRE_SIGNATURE=false)');
+      }
+
       const message = parseInbound(request.body);
       if (message) await ctx.enqueue(message);
+      // 200 aunque el payload venga incompleto: un 4xx haría reintentar para siempre.
       return reply.code(200).send({ ok: true });
     });
+  },
+
+  /**
+   * En Chatwoot el handoff se marca con un LABEL en la conversación, que es lo
+   * que el equipo filtra en su bandeja. Suele ir junto con dos cosas más:
+   * cambiar el `status` a "open" y asignar un agente o un equipo.
+   *
+   * Para completarlo:
+   *   POST {CHATWOOT_BASE_URL}/api/v1/accounts/{ACCOUNT_ID}/conversations/{id}/labels
+   *     headers: { api_access_token: CHATWOOT_API_TOKEN }
+   *     body:    { labels: ['bot-handoff'] }
+   *
+   *   Ojo: ese endpoint REEMPLAZA los labels de la conversación, no los suma.
+   *   Si ya usás labels para otra cosa, leelos primero (GET al mismo path) y
+   *   mandá la lista completa. Es el error clásico de esta integración.
+   *
+   * Mientras no lo implementes, el handoff igual funciona: el kit apaga el
+   * agente y te manda el mail. Lo que falta es que tu equipo lo vea en Chatwoot.
+   */
+  async handoff(_input: HandoffInput): Promise<void> {
+    throw new Error('chatwoot.handoff sin implementar (ver comentarios del archivo)');
   },
 
   async sendOutbound(_input: SendOutboundInput): Promise<{ messageId?: string }> {
