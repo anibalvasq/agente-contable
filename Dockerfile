@@ -27,7 +27,7 @@ COPY web ./web
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
-# Usuario no-root. Cambiá el nombre si querés, es cosmético.
+# Usuario no-root. Cambia el nombre si quieres, es cosmético.
 RUN addgroup -S app && adduser -S app -G app
 USER app
 

@@ -13,7 +13,6 @@ Si el usuario quiere crear su agente desde cero, ejecuta el comando `/build-agen
 - `src/memory/` — store: `postgres` o `memory` (elegido con `STORE`).
 - `src/security/` — firmas HMAC de webhooks, rate limit, sesiones firmadas.
 - `src/notifications/` — avisos: al equipo por el canal (etiqueta en el CRM) y al desarrollador por mail (Resend).
-- `src/notifications/` — avisos: al equipo por el canal (etiqueta en el CRM) y al desarrollador por mail (Resend).
 - `config/agent.yaml` — identidad, conocimiento y `guardrails` (editable por no-devs).
 
 ## Seguridad — lee esto antes de tocar el agente
