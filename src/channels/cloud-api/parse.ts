@@ -6,7 +6,7 @@ import type { NormalizedMessage } from '../types.js';
  *
  * Un webhook puede traer varios mensajes; los de tipo distinto de texto quedan
  * con texto vacío y el pipeline los ignora. Para manejar audio/imágenes, ese es
- * el punto a extender: bajás el media por su id y lo transcribís/describís.
+ * el punto a extender: bajas el media por su id y lo transcribes/describes.
  */
 export function parseInbound(payload: unknown): NormalizedMessage[] {
   const out: NormalizedMessage[] = [];

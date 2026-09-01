@@ -2,8 +2,22 @@
 
 Este repo es **wa-agent-starter**: un boilerplate para agentes de IA de WhatsApp. Node 20 + TypeScript (ESM). Está construido y testeado — tu rol es ayudar al usuario a **configurarlo, extenderlo y desplegarlo**, no reescribir el núcleo.
 
-## Onboarding
-Si el usuario quiere crear su agente desde cero, ejecuta el comando `/build-agent`: te guía para entrevistarlo y dejar la config lista.
+## Onboarding — leelo antes que nada
+
+**Si el usuario escribe `empezar` (o "empecemos", "quiero empezar", "arranquemos",
+"ayudame a configurar esto", o cualquier variante de arrancar de cero), ejecuta
+el comando `/empezar`.** No improvises tu propia guía y no le vuelques la lista
+de pasos completa: ese comando lo lleva de a un paso por vez, verificando cada
+uno, desde el repo recién clonado hasta el agente andando en internet.
+
+Quien escribe eso suele ser un alumno que nunca desplegó nada. La palabra suelta
+`empezar` es la puerta de entrada del kit: tiene que funcionar sin que sepa que
+existen los slash commands.
+
+Los otros dos caminos:
+- `/build-agent` — solo la entrevista de personalidad y credenciales, para quien
+  ya tiene el entorno andando. El paso 3 de `/empezar` lo llama.
+- `npm run setup` — la misma entrevista por terminal, sin Claude Code.
 
 ## Arquitectura (lo mínimo para orientarte)
 - El **cerebro** (agente) es siempre el mismo. Lo que cambia por proyecto es el **canal** (por dónde entran los mensajes), las **herramientas** y la **personalidad**.
@@ -44,7 +58,7 @@ Reglas que no se negocian:
 - **Desplegar** → Coolify es donde vive el backend, y **desplegar va ANTES de conectar un canal**: el webhook necesita una URL pública. `npm run deploy` la primera vez, `npm run redeploy` después. No hay webhook de GitHub; el deploy se dispara contra la API de Coolify.
 
 ## Reglas
-- **Escribí en español neutro**, no rioplatense: el repo lo leen alumnos de toda Latinoamérica. "puedes" y no "podés", "ejecuta" y no "corré", "aquí" y no "acá". Ojo con los regex de `guards/input.ts`: ahí conviven las dos variantes a propósito, porque un atacante escribe en la que se le ocurra.
+- **Escribe en español neutro**, no rioplatense: el repo lo leen alumnos de toda Latinoamérica. "puedes" y no "podés", "ejecuta" y no "corré", "aquí" y no "acá". Ojo con los regex de `guards/input.ts`: ahí conviven las dos variantes a propósito, porque un atacante escribe en la que se le ocurra.
 - No pongas secretos en el código ni los commitees; van en `.env` (gitignoreado).
 - Mantén el estilo: identificadores en inglés, comentarios y docs en español.
 - Los comentarios explican **por qué**, no qué. Este repo se lee para aprender: si arreglás un bug sutil, deja anotado cuál era.

@@ -1,6 +1,6 @@
 # wa-agent-starter
 
-Boilerplate para levantar **agentes de IA de WhatsApp** rápido y bien. La infraestructura de verdad — la que normalmente reescribís en cada proyecto — ya resuelta:
+Boilerplate para levantar **agentes de IA de WhatsApp** rápido y bien. La infraestructura de verdad — la que normalmente reescribes en cada proyecto — ya resuelta:
 
 - 🧠 **Agente con tool-calling** (OpenRouter → cualquier modelo: Claude, GPT, Gemini…).
 - 🔌 **Frontend pluggable**: WhatsApp Cloud API, GoHighLevel, Chatwoot, YCloud o tu propia app. Se elige con una variable.
@@ -20,15 +20,31 @@ Boilerplate para levantar **agentes de IA de WhatsApp** rápido y bien. La infra
 
 ```bash
 git clone https://github.com/diegovasquez-ai/wa-agent-starter.git
-cd wa-agent-starter && npm install
-claude            # abre Claude Code y escribe:  /build-agent
+cd wa-agent-starter
+claude            # abre Claude Code y escribe una sola palabra:  empezar
 ```
 
-`/build-agent` te **entrevista** (nombre del negocio, a qué se dedica, tono, horario, canal, tu API key de OpenRouter) y deja configurado `config/agent.yaml` + `.env`, listo para probar. No inventa código: solo completa la config de un agente ya construido y testeado — así puedes confiar en lo que corre y encima *entenderlo*.
+Escribe **`empezar`** y el repo te lleva de la mano, **de a un paso por vez**, desde aquí hasta tu agente respondiendo WhatsApp de verdad. Son 8 pasos y cada uno se verifica antes de pasar al siguiente:
+
+| | |
+|---|---|
+| 1 | Instalar y crear tu `.env` local |
+| 2 | Tu llave de OpenRouter (el cerebro) |
+| 3 | La personalidad de tu agente — y probarla en tu computadora |
+| 4 | Tu repo en GitHub |
+| 5 | **Coolify: la URL pública** (sin esto no hay WhatsApp posible) |
+| 6 | Pegar las credenciales en Coolify |
+| 7 | Conectar WhatsApp |
+| 8 | El día a día |
+
+Puedes cortar cuando quieras y retomar escribiendo `empezar` otra vez: el avance queda guardado. Claude hace el trabajo mecánico (instalar, editar archivos, desplegar) y solo te pide lo que nadie más puede hacer por ti: pegar una credencial, apretar un botón en un panel, decidir cómo habla tu bot.
+
+> **¿Solo quieres la entrevista de personalidad?** `/build-agent` hace eso suelto, si ya tienes el entorno andando. Es el paso 3 de `empezar`.
 
 ### Sin Claude Code
 
 ```bash
+npm install       # crea tu .env a partir de .env.example
 npm run setup     # la misma entrevista, por terminal
 npm run demo      # abre http://localhost:3000  (o: npm run chat)
 ```
@@ -279,7 +295,7 @@ Configurables en `guardrails` de [`config/agent.yaml`](config/agent.yaml). El pe
 - [ ] `WEBHOOK_REQUIRE_SIGNATURE=true` (el default).
 - [ ] `META_APP_SECRET` cargado si usas `cloud-api`. **Sin firma, un tercero puede hacer que tu número le mande mensajes a cualquiera** — el destinatario sale del payload del webhook.
 - [ ] `WEBHOOK_SECRET` largo y aleatorio (`openssl rand -hex 32`) para GHL, Chatwoot o YCloud.
-- [ ] `SESSION_SECRET` fijo si exponés el canal web.
+- [ ] `SESSION_SECRET` fijo si expones el canal web.
 - [ ] **`max_tokens_per_day` acorde a tu volumen real.** Es un corte de emergencia: si queda por debajo de tu día normal, a media tarde todos tus clientes reciben `budget_reply` y el bot parece roto. La cuenta es `conversaciones_por_día × 40000 × 3` — `npm run setup` la hace por ti.
 - [ ] `forbidden_patterns` con lo que tu negocio no puede prometer.
 - [ ] Tus herramientas de escritura validan los argumentos contra tu base de datos.
@@ -329,6 +345,15 @@ Sin `RESEND_API_KEY` no se manda nada y todo queda en los logs — el kit funcio
 ---
 
 ## Comandos
+
+En Claude Code:
+
+| Escribe… | Qué hace |
+|---|---|
+| `empezar` | Te guía paso a paso desde cero hasta el agente andando en internet. **Empieza por aquí.** |
+| `/build-agent` | Solo la entrevista: personalidad, conocimiento y credenciales. |
+
+En la terminal:
 
 | Comando | Qué hace |
 |---|---|

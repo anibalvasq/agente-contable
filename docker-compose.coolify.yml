@@ -30,20 +30,16 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       # Núcleo
       - STORE=${STORE:-postgres}
-      - CHANNEL_ADAPTER=${CHANNEL_ADAPTER:?elige un canal: cloud-api|ghl|chatwoot|ycloud|web}
+      - "CHANNEL_ADAPTER=${CHANNEL_ADAPTER:?elige un canal: cloud-api|ghl|chatwoot|ycloud|web}"
       - DATABASE_URL=postgres://${POSTGRES_USER:-agent}:${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-agent}
       - REDIS_URL=redis://redis:6379
       - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}
-      - WEBHOOK_REQUIRE_SIGNATURE=${WEBHOOK_REQUIRE_SIGNATURE:-true}
-      - RATE_LIMIT_PER_IP=${RATE_LIMIT_PER_IP:-120}
-      - RATE_LIMIT_PER_CONTACT=${RATE_LIMIT_PER_CONTACT:-15}
-      - SESSION_SECRET=${SESSION_SECRET:-}
       # Firma obligatoria en producción. No lo pongas en false aquí.
       - WEBHOOK_REQUIRE_SIGNATURE=${WEBHOOK_REQUIRE_SIGNATURE:-true}
       - RATE_LIMIT_PER_IP=${RATE_LIMIT_PER_IP:-120}
       - RATE_LIMIT_PER_CONTACT=${RATE_LIMIT_PER_CONTACT:-15}
       # Sin esto, cada redeploy le borra la sesión a todo el mundo (canal web).
-      - SESSION_SECRET=${SESSION_SECRET:?falta SESSION_SECRET: generalo con openssl rand -hex 32}
+      - "SESSION_SECRET=${SESSION_SECRET:?falta SESSION_SECRET: genéralo con openssl rand -hex 32}"
       # LLM (OpenRouter)
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:?falta OPENROUTER_API_KEY}
       - LLM_MODEL=${LLM_MODEL:-anthropic/claude-sonnet-4.5}
@@ -70,12 +66,7 @@ services:
       - CHATWOOT_API_TOKEN=${CHATWOOT_API_TOKEN:-}
       - CHATWOOT_ACCOUNT_ID=${CHATWOOT_ACCOUNT_ID:-}
       - YCLOUD_API_KEY=${YCLOUD_API_KEY:-}
-      - GHL_HANDOFF_TAG=${GHL_HANDOFF_TAG:-bot-handoff}
       # Avisos por mail. Sin RESEND_API_KEY todo queda en los logs.
-      - RESEND_API_KEY=${RESEND_API_KEY:-}
-      - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}
-      - ALERT_EMAIL_FROM=${ALERT_EMAIL_FROM:-onboarding@resend.dev}
-      # Avisos por mail al desarrollador. Sin RESEND_API_KEY todo queda en logs.
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}
       - ALERT_EMAIL_FROM=${ALERT_EMAIL_FROM:-onboarding@resend.dev}

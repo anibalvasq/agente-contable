@@ -9,7 +9,7 @@ import { z } from 'zod';
 const schema = z.object({
   META_ACCESS_TOKEN: z.string().min(1, 'Falta META_ACCESS_TOKEN'),
   META_PHONE_NUMBER_ID: z.string().min(1, 'Falta META_PHONE_NUMBER_ID'),
-  // El "Verify token" que inventás y pones igual en el dashboard de Meta.
+  // El "Verify token" que inventas y pones igual en el dashboard de Meta.
   META_VERIFY_TOKEN: z.string().min(1, 'Falta META_VERIFY_TOKEN'),
 
   /**

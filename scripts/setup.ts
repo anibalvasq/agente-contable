@@ -86,7 +86,7 @@ async function main() {
     // hacer que tu número le mande WhatsApp a quien quiera. Ver
     // src/channels/cloud-api/env.ts.
     console.log('\n   El App Secret es OBLIGATORIO: sin él, cualquiera que conozca tu URL');
-    console.log('   puede usar tu número para mandar mensajes. Lo copiás de:');
+    console.log('   puede usar tu número para mandar mensajes. Lo copias de:');
     console.log('   Meta for Developers → tu app → Settings → Basic → App Secret\n');
     channelVars.META_APP_SECRET = await ask('   · META_APP_SECRET', '');
   } else if (channel === 'ghl') {

@@ -17,7 +17,7 @@ const schema = z.object({
    * La etiqueta que se le pone al contacto cuando el agente deriva a un humano.
    *
    * Es LA pieza de integración del handoff en GHL: el equipo no mira logs, mira
-   * su lista de contactos. Con esta tag armas un Smart List, disparás un
+   * su lista de contactos. Con esta tag armas un Smart List, disparas un
    * workflow que le notifica al vendedor, o simplemente la ves en el contacto.
    *
    * Pon la que ya use tu operación. Si no tienes ninguna, crea esta.

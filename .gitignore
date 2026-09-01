@@ -6,3 +6,4 @@ dist/
 .DS_Store
 .deploy-keys/
 coverage/
+.setup-progreso.md
