@@ -128,6 +128,19 @@ const schema = z
   .refine((e) => e.STORE !== 'postgres' || Boolean(e.DATABASE_URL), {
     message: 'STORE=postgres requiere DATABASE_URL',
     path: ['DATABASE_URL'],
+  })
+  /**
+   * En produccion estas dos dejaron de estar garantizadas por el compose: las
+   * guardas ${VAR:?...} rompian el parseo previo de Coolify y se quitaron a
+   * proposito (ver docker-compose.coolify.yml). La validacion vive aqui.
+   */
+  .refine((e) => e.NODE_ENV !== 'production' || Boolean(e.SESSION_SECRET), {
+    message: 'falta SESSION_SECRET en produccion: generalo con `openssl rand -hex 32`',
+    path: ['SESSION_SECRET'],
+  })
+  .refine((e) => e.NODE_ENV !== 'production' || !/:@/.test(e.DATABASE_URL ?? 'x'), {
+    message: 'DATABASE_URL sin password: falta POSTGRES_PASSWORD en el entorno',
+    path: ['DATABASE_URL'],
   });
 
 const parsed = schema.safeParse(process.env);

@@ -12,6 +12,18 @@
 #  - SERVICE_FQDN_APP_3000 es una magic var de Coolify: genera el dominio y
 #    apunta el proxy al puerto 3000.
 #
+# NO uses la sintaxis de variable obligatoria (dolar-llave VAR dos-puntos
+# interrogacion mensaje) en este archivo.
+#
+# El build pack "Docker Compose" de Coolify parsea el compose ANTES de inyectar
+# las variables de la aplicacion, con un entorno vacio. Cualquier variable
+# marcada como obligatoria ahi aborta ese parseo, y Coolify lo reporta con un
+# error generico y enganoso ("Failed to read Git source") que parece un
+# problema de la deploy key.
+#
+# No hace falta: src/env.ts valida todo al arrancar con Zod y mata el proceso
+# con un mensaje claro si falta algo. La validacion vive ahi, no aqui.
+
 # Si usas STORE=memory (sin persistencia), puedes borrar el servicio `postgres`
 # y su volumen, y quitar DATABASE_URL y el depends_on de postgres.
 
@@ -30,8 +42,8 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       # Núcleo
       - STORE=${STORE:-postgres}
-      - "CHANNEL_ADAPTER=${CHANNEL_ADAPTER:?elige un canal: cloud-api|ghl|chatwoot|ycloud|web}"
-      - DATABASE_URL=postgres://${POSTGRES_USER:-agent}:${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-agent}
+      - CHANNEL_ADAPTER=${CHANNEL_ADAPTER:-web}
+      - DATABASE_URL=postgres://${POSTGRES_USER:-agent}:${POSTGRES_PASSWORD:-}@postgres:5432/${POSTGRES_DB:-agent}
       - REDIS_URL=redis://redis:6379
       - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}
       # Firma obligatoria en producción. No lo pongas en false aquí.
@@ -39,9 +51,9 @@ services:
       - RATE_LIMIT_PER_IP=${RATE_LIMIT_PER_IP:-120}
       - RATE_LIMIT_PER_CONTACT=${RATE_LIMIT_PER_CONTACT:-15}
       # Sin esto, cada redeploy le borra la sesión a todo el mundo (canal web).
-      - "SESSION_SECRET=${SESSION_SECRET:?falta SESSION_SECRET: genéralo con openssl rand -hex 32}"
+      - SESSION_SECRET=${SESSION_SECRET:-}
       # LLM (OpenRouter)
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:?falta OPENROUTER_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - LLM_MODEL=${LLM_MODEL:-anthropic/claude-sonnet-4.5}
       - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-1024}
       - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.3}
@@ -81,12 +93,12 @@ services:
     restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-agent}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-}
       - POSTGRES_DB=${POSTGRES_DB:-agent}
     volumes:
       - wa-agent-pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-agent} -d ${POSTGRES_DB:-agent}']
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
       interval: 10s
       timeout: 5s
       retries: 5
