@@ -20,8 +20,8 @@ export const getCurrentTime: Tool = {
     const now = new Date();
     return {
       iso: now.toISOString(),
-      readable: now.toLocaleString('es-PE', { timeZone: 'America/Lima' }),
-      timezone: 'America/Lima',
+      readable: now.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
+      timezone: 'America/Santiago',
     };
   },
 };

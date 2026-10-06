@@ -165,7 +165,7 @@ export async function runAgent(input: RunAgentInput): Promise<AgentResult> {
       messages,
       ...(toolDefs.length ? { tools: toolDefs } : {}),
       max_tokens: env.LLM_MAX_TOKENS,
-      temperature: env.LLM_TEMPERATURE,
+      ...(env.LLM_TEMPERATURE !== undefined ? { temperature: env.LLM_TEMPERATURE } : {}),
     });
 
     tokens += completion.usage?.total_tokens ?? 0;

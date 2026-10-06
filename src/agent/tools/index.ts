@@ -69,6 +69,7 @@ export interface Tool {
 import { escalateToHuman } from './examples/escalateToHuman.js';
 import { getCurrentTime } from './examples/getCurrentTime.js';
 import { searchKnowledge } from './examples/searchKnowledge.js';
+import { chileTools } from './chile/tools.js';
 
 /** Las herramientas que el agente tiene disponibles. Suma las tuyas aquí. */
-export const defaultTools: Tool[] = [getCurrentTime, searchKnowledge, escalateToHuman];
+export const defaultTools: Tool[] = [getCurrentTime, searchKnowledge, ...chileTools, escalateToHuman];

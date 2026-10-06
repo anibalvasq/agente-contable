@@ -52,6 +52,8 @@ services:
       - RATE_LIMIT_PER_CONTACT=${RATE_LIMIT_PER_CONTACT:-15}
       # Sin esto, cada redeploy le borra la sesión a todo el mundo (canal web).
       - SESSION_SECRET=${SESSION_SECRET:-}
+      # Clave del panel del estudio (/panel). Sin ella el panel queda apagado.
+      - PANEL_PASSWORD=${PANEL_PASSWORD:-}
       # LLM (OpenRouter)
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - LLM_MODEL=${LLM_MODEL:-anthropic/claude-sonnet-4.5}

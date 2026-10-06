@@ -26,8 +26,10 @@ export const webAdapter: ChannelAdapter = {
   mode: 'inline',
 
   async registerRoutes(app: FastifyInstance, ctx: ChannelContext): Promise<void> {
-    // Sirve la carpeta web/ (la UI) en la raíz.
-    await app.register(fastifyStatic, { root: path.resolve(process.cwd(), 'web'), prefix: '/' });
+    // El chat de prueba vive en GET /chat; la raíz es del panel del estudio
+    // (ver panel/routes.ts). index: false para que el estático no reclame "/".
+    await app.register(fastifyStatic, { root: path.resolve(process.cwd(), 'web'), prefix: '/', index: false });
+    app.get('/chat', (_req, reply) => reply.sendFile('index.html'));
 
     // La app web postea aquí y recibe la respuesta del agente en el acto.
     app.post('/chat', async (request, reply) => {
@@ -59,7 +61,7 @@ export const webAdapter: ChannelAdapter = {
       return reply.send({ reply: answer ?? '', sessionId: signedId });
     });
 
-    logger.info(`canal web listo → abre http://localhost:${env.PORT} para chatear`);
+    logger.info(`canal web listo → chat de prueba en http://localhost:${env.PORT}/chat`);
   },
 
   // El web responde en la misma llamada HTTP, no necesita enviar por fuera.

@@ -21,6 +21,7 @@ COPY --from=build /app/dist ./dist
 COPY migrations ./migrations
 COPY config ./config
 COPY web ./web
+COPY panel ./panel
 
 # Las migraciones corren al arrancar (ver docker-entrypoint.sh). Se saltean
 # solas si STORE=memory (no hay Postgres que migrar).
@@ -29,6 +30,8 @@ RUN chmod +x docker-entrypoint.sh
 
 # Usuario no-root. Cambia el nombre si quieres, es cosmético.
 RUN addgroup -S app && adduser -S app -G app
+# El panel guarda en data/ cuando STORE=memory; sin esto el usuario app no puede escribir.
+RUN mkdir -p /app/data && chown app:app /app/data
 USER app
 
 EXPOSE 3000

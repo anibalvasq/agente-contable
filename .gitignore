@@ -7,3 +7,6 @@ dist/
 .deploy-keys/
 coverage/
 .setup-progreso.md
+inbox/
+# Clientes y lotes del panel cuando STORE=memory (ver src/panel/store.ts).
+data/

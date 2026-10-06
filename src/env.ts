@@ -51,7 +51,7 @@ const schema = z
     REDIS_URL: conDefault(z.string().url(), 'redis://localhost:6379'),
 
     // Qué frontend está activo. Ver src/channels/registry.ts.
-    CHANNEL_ADAPTER: z.enum(['web', 'cloud-api', 'ghl', 'chatwoot', 'ycloud']).default('web'),
+    CHANNEL_ADAPTER: z.enum(['web', 'telegram', 'cloud-api', 'ghl', 'chatwoot', 'ycloud']).default('web'),
 
     // Secreto compartido para validar webhooks (los canales que lo usan).
     WEBHOOK_SECRET: opcional(z.string()),
@@ -84,6 +84,10 @@ const schema = z
      */
     SESSION_SECRET: opcional(z.string()),
 
+    // Clave del panel del estudio (/panel). Sin ella el panel queda abierto en
+    // desarrollo y APAGADO en producción: tiene datos contables de clientes.
+    PANEL_PASSWORD: opcional(z.string().min(12, 'PANEL_PASSWORD debe tener al menos 12 caracteres')),
+
     // ── Avisos al desarrollador (Resend) ──────────────────────
     /**
      * Un agente que falla en silencio es peor que uno que no existe: el cliente
@@ -107,11 +111,19 @@ const schema = z
     ALERT_EMAIL_FROM: conDefault(z.string(), 'onboarding@resend.dev'),
 
     // ── LLM (OpenRouter) ──────────────────────────────────────
-    OPENROUTER_API_KEY: z.string().min(1, 'Falta la API key de OpenRouter'),
+    // Cualquier API compatible con OpenAI. LLM_API_KEY y LLM_BASE_URL mandan; si
+    // no están, se usan las OPENROUTER_* (el nombre original del kit).
+    //   OpenAI:     LLM_BASE_URL=https://api.openai.com/v1      LLM_MODEL=gpt-4.1-mini
+    //   Anthropic:  LLM_BASE_URL=https://api.anthropic.com/v1/  LLM_MODEL=claude-sonnet-4-5
+    LLM_API_KEY: opcional(z.string()),
+    LLM_BASE_URL: opcional(z.string().url()),
+    OPENROUTER_API_KEY: opcional(z.string()),
     OPENROUTER_BASE_URL: conDefault(z.string().url(), 'https://openrouter.ai/api/v1'),
     LLM_MODEL: conDefault(z.string(), 'anthropic/claude-sonnet-4.5'),
     LLM_MAX_TOKENS: z.coerce.number().int().positive().default(1024),
-    LLM_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.3),
+    // Opcional: los modelos de Claude más nuevos rechazan `temperature` con un
+    // 400 ("deprecated for this model"). Vacía, no se manda y decide el modelo.
+    LLM_TEMPERATURE: opcional(z.coerce.number().min(0).max(2)),
     APP_URL: z.string().default(''),
     APP_TITLE: z.string().default('wa-agent-starter'),
 
@@ -124,6 +136,10 @@ const schema = z
       .string()
       .default('true')
       .transform((v) => v.toLowerCase() !== 'false'),
+  })
+  .refine((e) => Boolean(e.LLM_API_KEY ?? e.OPENROUTER_API_KEY), {
+    message: 'Falta la API key del LLM (LLM_API_KEY, o OPENROUTER_API_KEY)',
+    path: ['LLM_API_KEY'],
   })
   .refine((e) => e.STORE !== 'postgres' || Boolean(e.DATABASE_URL), {
     message: 'STORE=postgres requiere DATABASE_URL',
@@ -151,5 +167,10 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const env = parsed.data;
+export const env = {
+  ...parsed.data,
+  /** Lo que realmente usa el cliente del LLM (ver llm.ts). */
+  LLM_API_KEY_RESOLVED: (parsed.data.LLM_API_KEY ?? parsed.data.OPENROUTER_API_KEY) as string,
+  LLM_BASE_URL_RESOLVED: parsed.data.LLM_BASE_URL ?? parsed.data.OPENROUTER_BASE_URL,
+};
 export type Env = typeof env;

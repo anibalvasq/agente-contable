@@ -39,8 +39,8 @@ export function buildSystemPrompt({ config, contactName, fenceId }: PromptContex
  * agenda o cita horarios con la fecha equivocada es peor que no tenerlo.
  */
 function contexto(contactName: string | null): string {
-  const ahora = new Date().toLocaleString('es-PE', {
-    timeZone: 'America/Lima',
+  const ahora = new Date().toLocaleString('es-CL', {
+    timeZone: 'America/Santiago',
     dateStyle: 'full',
     timeStyle: 'short',
   });
@@ -49,5 +49,5 @@ function contexto(contactName: string | null): string {
     ? `El usuario se llama ${contactName}.`
     : 'Todavía no sabes el nombre del usuario; pregúntaselo con naturalidad si viene al caso.';
 
-  return ['## Contexto', '', `Ahora mismo son las ${ahora} (hora de Lima).`, quienEs].join('\n');
+  return ['## Contexto', '', `Ahora mismo son las ${ahora} (hora de Chile).`, quienEs].join('\n');
 }

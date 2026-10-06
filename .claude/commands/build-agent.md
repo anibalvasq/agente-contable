@@ -30,7 +30,7 @@ No vuelques todas juntas. Pregunta de a una:
 ## 3. Pruébalo con el usuario
 
 - Si hace falta, ejecuta `npm install`.
-- Canal `web` → arranca `npm run demo` y decile que abra http://localhost:3000.
+- Canal `web` → arranca `npm run demo` y decile que abra http://localhost:3000/chat.
 - Otro canal → `npm run chat` para probar el agente en la terminal.
 - Mostrale cómo responde y pregunta si quiere ajustar el tono o el conocimiento. Si sí, edita `config/agent.yaml` y vuelve a probar. Itera hasta que le guste.
 

@@ -99,6 +99,44 @@ async function avisarPorMail(notice: HandoffNotice): Promise<void> {
   });
 }
 
+export interface DocumentNotice {
+  /** Id del chat en el canal: agrupa los archivos de un mismo cliente. */
+  externalContactId: string;
+  contactName: string | null;
+  /** Nombre con el que quedó guardado (ya saneado). */
+  savedAs: string;
+  channel: string;
+}
+
+/** Quita saltos de línea y caracteres de control: el nombre lo escribió el cliente. */
+const una_linea = (s: string): string => s.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 80);
+
+/**
+ * Un cliente mandó un documento y está en la bandeja esperando que alguien lo
+ * procese. Va por mail porque el equipo no está mirando la carpeta.
+ *
+ * La clave es POR CLIENTE: si manda diez Excel seguidos llega un mail, no diez.
+ * Los siguientes se resumen en el próximo aviso (ver email.ts). El mail dice
+ * dónde mirar, no lista archivos, justo por eso.
+ */
+export async function notifyDocument(notice: DocumentNotice): Promise<void> {
+  const quien = una_linea(notice.contactName ?? '') || notice.externalContactId;
+  await sendAlert({
+    key: `documento:${notice.channel}:${notice.externalContactId}`,
+    subject: `[agente] Documento recibido — ${quien}`,
+    body: [
+      'Un cliente envió un documento por el chat y está esperando que el equipo lo procese.',
+      '',
+      `Cliente:  ${quien} (${notice.externalContactId})`,
+      `Archivo:  ${notice.savedAs}`,
+      `Carpeta:  inbox/${notice.channel}-${notice.externalContactId}/`,
+      '',
+      'Si manda varios seguidos, este es el único aviso de los próximos 15 minutos:',
+      'revisa la carpeta completa.',
+    ].join('\n'),
+  });
+}
+
 /**
  * Algo se rompió y necesita que mires. Va solo por mail: el equipo de atención
  * no puede hacer nada con un error de infraestructura.

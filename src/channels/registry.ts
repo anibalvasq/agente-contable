@@ -14,6 +14,8 @@ export async function getActiveAdapter(): Promise<ChannelAdapter> {
       return (await import('./cloud-api/adapter.js')).cloudApiAdapter;
     case 'ghl':
       return (await import('./ghl/adapter.js')).ghlAdapter;
+    case 'telegram':
+      return (await import('./telegram/adapter.js')).telegramAdapter;
     case 'chatwoot':
       return (await import('./chatwoot/adapter.js')).chatwootAdapter;
     case 'ycloud':

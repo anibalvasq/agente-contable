@@ -106,7 +106,7 @@ mensaje**, igual que aquí.
 
 Escribe `config/agent.yaml` con lo que te diga.
 
-**Verificación:** `npm run demo` y que abra http://localhost:3000. Que hable con
+**Verificación:** `npm run demo` y que abra http://localhost:3000/chat. Que hable con
 su agente. Pregúntale si el tono le cierra; si no, ajusta el `yaml` y que vuelva
 a probar. **No avances hasta que le guste** — es mucho más barato corregirlo
 ahora que con clientes reales del otro lado.

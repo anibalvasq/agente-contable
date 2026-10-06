@@ -46,7 +46,7 @@ Puedes cortar cuando quieras y retomar escribiendo `empezar` otra vez: el avance
 ```bash
 npm install       # crea tu .env a partir de .env.example
 npm run setup     # la misma entrevista, por terminal
-npm run demo      # abre http://localhost:3000  (o: npm run chat)
+npm run demo      # panel en http://localhost:3000, chat de prueba en /chat  (o: npm run chat)
 ```
 
 **¿Prefieres a mano?** El `npm install` ya te creó el `.env` a partir de [`.env.example`](.env.example): ábrelo, pon tu `OPENROUTER_API_KEY` y edita [`config/agent.yaml`](config/agent.yaml). El código no cambia entre un agente y otro — solo ese archivo.
