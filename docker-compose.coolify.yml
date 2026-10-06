@@ -54,11 +54,16 @@ services:
       - SESSION_SECRET=${SESSION_SECRET:-}
       # Clave del panel del estudio (/panel). Sin ella el panel queda apagado.
       - PANEL_PASSWORD=${PANEL_PASSWORD:-}
-      # LLM (OpenRouter)
+      # LLM. OpenRouter por defecto; para Anthropic u OpenAI directo, define
+      # LLM_API_KEY y LLM_BASE_URL (mandan sobre OPENROUTER_*).
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_BASE_URL=${LLM_BASE_URL:-}
       - LLM_MODEL=${LLM_MODEL:-anthropic/claude-sonnet-4.5}
       - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-1024}
-      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.3}
+      # Vacía por defecto: los modelos nuevos de Claude rechazan temperature con
+      # un 400, y el compose antes la forzaba a 0.3 aunque no la definieras.
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-}
       - APP_TITLE=${APP_TITLE:-wa-agent-starter}
       - AGENT_CONFIG_PATH=${AGENT_CONFIG_PATH:-config/agent.yaml}
       - MESSAGE_DEBOUNCE_MS=${MESSAGE_DEBOUNCE_MS:-8000}
@@ -73,6 +78,8 @@ services:
       # Obligatorio con CHANNEL_ADAPTER=cloud-api: sin firma, tu número puede
       # ser usado para mandarle mensajes a cualquiera.
       - META_APP_SECRET=${META_APP_SECRET:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_ALLOWED_USER_IDS=${TELEGRAM_ALLOWED_USER_IDS:-}
       - GHL_API_TOKEN=${GHL_API_TOKEN:-}
       - GHL_LOCATION_ID=${GHL_LOCATION_ID:-}
       - GHL_HANDOFF_TAG=${GHL_HANDOFF_TAG:-bot-handoff}
