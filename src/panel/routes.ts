@@ -16,7 +16,9 @@ import type { PanelStore } from './store.js';
 
 // Solo estas colecciones. Sin la lista, el endpoint sería un disco gratis
 // para guardar lo que cualquiera quiera mandarle.
-const COLECCIONES = new Set(['clientes', 'lotes']);
+const COLECCIONES = new Set(['clientes', 'lotes', 'cuentas', 'centros', 'usuarios']);
+// Tope de una importación. Un plan de cuentas real anda por las 300-800.
+const MAX_LOTE = 3000;
 // Los ids los genera el panel (uid('cli') → "cli_lzx3k9ab1"). Nada de "/" ni "..".
 const ID_VALIDO = /^[a-z]{2,10}_[a-z0-9]{4,40}$/;
 
@@ -88,6 +90,25 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
         return reply.code(400).send({ error: 'el documento debe ser un objeto con el mismo id de la ruta' });
       }
       await store.put(col, id, body);
+      return reply.code(204).send();
+    },
+  );
+
+  app.post<{ Params: { col: string } }>(
+    '/panel/api/docs/:col/_lote',
+    { preHandler: autorizar, bodyLimit: 4 * 1024 * 1024 },
+    async (req, reply) => {
+      const { col } = req.params;
+      if (!COLECCIONES.has(col)) return reply.code(400).send({ error: 'ruta inválida' });
+      const docs = (req.body as { docs?: unknown } | null)?.docs;
+      if (!Array.isArray(docs) || docs.length === 0 || docs.length > MAX_LOTE) {
+        return reply.code(400).send({ error: `se esperan entre 1 y ${MAX_LOTE} documentos` });
+      }
+      const validos = docs.every(
+        (d) => d && typeof d === 'object' && !Array.isArray(d) && typeof (d as { id?: unknown }).id === 'string' && ID_VALIDO.test((d as { id: string }).id),
+      );
+      if (!validos) return reply.code(400).send({ error: 'todos los documentos necesitan un id válido' });
+      await store.putMany(col, docs as { id: string }[]);
       return reply.code(204).send();
     },
   );

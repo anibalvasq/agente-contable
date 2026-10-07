@@ -58,6 +58,22 @@ describe('panel', () => {
     assert.equal((await put('/panel/api/docs/clientes/cli_abc123', { id: 'cli_zzz999' })).statusCode, 400);
   });
 
+  it('importa varios documentos de una vez y rechaza el lote si uno trae un id inválido', async () => {
+    const { app } = await armar();
+    const lote = (docs: object[]) =>
+      app.inject({ method: 'POST', url: '/panel/api/docs/cuentas/_lote', headers: auth(), payload: { docs } });
+    const cuentas = [
+      { id: 'cta_aaa111', codigo: '1101001', nombre: 'Caja' },
+      { id: 'cta_bbb222', codigo: '1102001', nombre: 'Banco' },
+    ];
+    assert.equal((await lote(cuentas)).statusCode, 204);
+    assert.equal((await app.inject({ url: '/panel/api/docs/cuentas', headers: auth() })).json().docs.length, 2);
+    assert.equal((await lote([...cuentas, { id: '../x' }])).statusCode, 400);
+    assert.equal((await lote([])).statusCode, 400);
+    const sinClave = await app.inject({ method: 'POST', url: '/panel/api/docs/cuentas/_lote', payload: { docs: cuentas } });
+    assert.equal(sinClave.statusCode, 401);
+  });
+
   it('valida la consulta al asistente antes de llamar al modelo', async () => {
     let llamadas = 0;
     const { app } = await armar({ responder: async () => (llamadas++, { content: 'ok', tool_calls: [] }) });

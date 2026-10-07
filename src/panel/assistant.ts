@@ -38,7 +38,7 @@ const BUSCAR_MOVIMIENTOS: OpenAI.Chat.ChatCompletionTool = {
 
 /** La respuesta fija ante una pregunta fuera de alcance. La usa también el test. */
 export const FUERA_DE_ALCANCE =
-  'Solo puedo responder sobre lo que está cargado en la plataforma: clientes, sus procesos, lotes de comprobantes, validaciones, cuadre y carga a Defontana.';
+  'Solo puedo responder sobre lo que está cargado en la plataforma: clientes, sus procesos, plan de cuentas, centros de costo, lotes de comprobantes, validaciones, cuadre y carga a Defontana.';
 
 /**
  * El alcance va primero y en negativo a propósito. Con solo "usa los datos
@@ -51,7 +51,7 @@ const REGLAS = [
   '',
   '## Alcance (obligatorio)',
   'Solo respondes preguntas sobre la información de la plataforma que aparece en "Datos de la plataforma" o que devuelve buscar_movimientos:',
-  '- clientes, sus reglas y sus procesos (incluidos los que se agreguen después), con sus pasos, trámites, notas y estado;',
+  '- clientes, su ficha, sus reglas, su plan de cuentas, sus centros de costo y sus procesos (incluidos los que se agreguen después), con sus pasos, trámites, notas y estado;',
   '- lotes de comprobantes: archivos, meses, cuentas, movimientos, validación, correcciones, cuadre, aprobación y carga a Defontana.',
   'También puedes explicar cómo se calcula algo que muestra la plataforma (por ejemplo el cuadre Haber − Debe) para interpretar esos datos.',
   `Cualquier otra pregunta —conocimiento general, normativa o asesoría tributaria que no salga de los datos, redacción de textos, programación, cálculos ajenos a los datos, opiniones, temas personales— la rechazas respondiendo exactamente: "${FUERA_DE_ALCANCE}" y nada más.`,

@@ -13,6 +13,8 @@ import { env } from '../env.js';
 export interface PanelStore {
   list(collection: string): Promise<unknown[]>;
   put(collection: string, id: string, data: unknown): Promise<void>;
+  /** Varios documentos de una vez (importar un plan de cuentas desde Excel). */
+  putMany(collection: string, docs: { id: string }[]): Promise<void>;
   remove(collection: string, id: string): Promise<void>;
 }
 
@@ -66,6 +68,14 @@ export function createFileStore(file: string): PanelStore {
         await guardar();
       });
     },
+    putMany(collection, docs) {
+      return enFila(async () => {
+        const db = await cargar();
+        const col = (db[collection] ??= {});
+        for (const d of docs) col[d.id] = d;
+        await guardar();
+      });
+    },
     remove(collection, id) {
       return enFila(async () => {
         const db = await cargar();
@@ -89,6 +99,15 @@ async function createPostgresStore(): Promise<PanelStore> {
         `INSERT INTO panel_docs (collection, id, data, updated_at) VALUES ($1, $2, $3, now())
          ON CONFLICT (collection, id) DO UPDATE SET data = EXCLUDED.data, updated_at = now()`,
         [collection, id, JSON.stringify(data)],
+      );
+    },
+    async putMany(collection, docs) {
+      // Una sola sentencia: 800 cuentas no son 800 viajes a la base.
+      await query(
+        `INSERT INTO panel_docs (collection, id, data, updated_at)
+         SELECT $1, d->>'id', d, now() FROM jsonb_array_elements($2::jsonb) AS d
+         ON CONFLICT (collection, id) DO UPDATE SET data = EXCLUDED.data, updated_at = now()`,
+        [collection, JSON.stringify(docs)],
       );
     },
     async remove(collection, id) {
