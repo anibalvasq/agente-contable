@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo 'sin dependencias: se publica solo el panel'",
+  "buildCommand": "echo 'sin build: se publica panel/ tal cual'",
+  "outputDirectory": "panel",
+  "headers": [
+    { "source": "/(.*)", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] }
+  ]
+}

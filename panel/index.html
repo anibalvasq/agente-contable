@@ -265,6 +265,44 @@ table.ledger{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5
 @media (max-width:520px){ .kpis{grid-template-columns:1fr 1fr;gap:10px} .kpi{padding:12px 14px} .kpi .k-v{font-size:22px} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
+/* ---------- procesos IA ---------- */
+.demo-bar{background:linear-gradient(90deg,#4F46E5,#0891B2);color:#fff;font-size:13px;padding:7px 16px;text-align:center;font-weight:500}
+.ia-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;margin-top:20px}
+.ia-card{display:flex;flex-direction:column;gap:10px}
+.ia-h{display:flex;gap:12px;align-items:flex-start}
+.ia-n{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:13px}
+.ia-card h3{margin:0 0 2px}
+.ia-sis{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.ia-sis span{font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid var(--rule);color:var(--muted);white-space:nowrap}
+.ia-card summary{cursor:pointer;font-size:12.5px;color:var(--muted);font-weight:600}
+.ia-card ul{margin:6px 0 0;padding-left:18px;font-size:12.5px;color:var(--muted)}
+.ia-card ul li + li{margin-top:3px}
+.ia-foot{margin-top:auto;padding-top:4px}
+.ia-ciclo{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px}
+.ia-dia{border:1px solid var(--rule);border-radius:var(--r-sm);padding:10px 12px;display:flex;flex-direction:column;gap:1px;font-size:13px}
+.ia-dia b{font-size:22px;letter-spacing:-.02em;line-height:1.2}
+.ia-dia.prox{border-color:var(--accent);box-shadow:0 0 0 3px var(--ring)}
+.ia-mail{border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--paper);padding:14px 16px;font-size:13.5px;margin-top:8px;overflow-wrap:anywhere}
+.ia-mail dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:3px 12px;margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid var(--rule);font-size:12.5px}
+.ia-mail dt{color:var(--muted)} .ia-mail dd{margin:0}
+.ia-mail .cuerpo{white-space:pre-wrap;line-height:1.6}
+.ia-pdf{border:1px solid #CBD3DF;border-radius:6px;background:#fff;color:#0F172A;padding:20px 22px;font-size:12.5px;max-width:560px;box-shadow:var(--shadow)}
+.ia-pdf .ledger th{background:#F4F6F9;color:#64748B}
+.ia-pdf .ledger tr.total td{background:#F4F6F9;border-top-color:#0F172A}
+.ia-pdf .ledger td{border-bottom-color:#E6E9EF}
+.ia-pdf .muted,.ia-pdf .kv dt{color:#64748B}
+.ia-folio{border:2px solid #DC2626;color:#DC2626;font-weight:700;padding:6px 12px;text-align:center;font-size:12px;line-height:1.4}
+.ia-cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.ia-cal .dow{font-size:11px;color:var(--muted);text-align:center;font-weight:600;text-transform:uppercase;padding-bottom:2px}
+.ia-cal .d{min-height:76px;border:1px solid var(--rule);border-radius:8px;padding:4px 5px;font-size:12px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.ia-cal .d.off{background:var(--paper);color:var(--muted)}
+.ia-cal .d.hoy{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.ia-cal .ev{font-size:10.5px;line-height:1.25;padding:1px 4px;border-radius:4px;background:var(--accent-soft);color:var(--accent);font-weight:600;overflow-wrap:anywhere}
+.ia-cal .ev.venc{background:var(--alert-bg);color:var(--alert)}
+.ia-cal .ev.rec{background:var(--warn-bg);color:var(--warn)}
+.ia-cal .ev.cob{background:var(--ok-bg);color:var(--ok)}
+@media (max-width:640px){ .ia-cal .d{min-height:46px} .ia-cal .ev{font-size:0;padding:0;height:5px} .steps{grid-template-columns:repeat(2,minmax(0,1fr))!important} }
+
 /* ---------- asistente flotante ---------- */
 .aw{position:fixed;right:calc(20px + env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:30}
 .aw-fab{border:none;background:linear-gradient(135deg,#6366F1,#4F46E5);color:#fff;border-radius:999px;padding:12px 20px;font-weight:600;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 10px 30px rgba(79,70,229,.4);transition:transform .15s,box-shadow .15s}
@@ -316,6 +354,7 @@ body:not(.logged-out) #loginScreen{display:none}
       <div class="dbl"></div>
     </div>
     <p class="lede small">Identifícate para usar el sistema. Tu nombre queda registrado en cada lote que apruebes.</p>
+    <p id="demoNote" class="note" hidden>Versión de demostración con datos ficticios. Escribe cualquier nombre para entrar: no se pide clave y nada se envía.</p>
     <p id="panelOff" class="note err" hidden>El panel está deshabilitado en este servidor: falta definir PANEL_PASSWORD.</p>
     <div class="stack">
       <div class="field"><label for="loginNombre">Nombre completo</label><input type="text" id="loginNombre" autocomplete="name" placeholder="Ej.: Gonzalo Vergara"></div>
@@ -517,14 +556,32 @@ function salir() {
   S.sesion = null; S.clientes = []; S.lotes = []; S.cuentas = []; S.centros = []; S.usuarios = []; S.rt = {}; S.chat = []; S.view = 'panel'; S.params = {};
   lsDel('ac_sesion'); lsDel('ac_clave'); render();
 }
+// Modo demostración: el mismo HTML publicado como sitio estático (Vercel), sin
+// el servidor del kit detrás. Se activa solo si la API responde 404 (no existe):
+// un servidor caído o una red cortada siguen mostrando "Sin conexión", porque
+// ahí el equipo creería estar guardando y no lo estaría.
+let DEMO = false;
+function activarDemo() {
+  DEMO = true; PANEL.habilitado = true; PANEL.requiereClave = false;
+  document.body.insertAdjacentHTML('afterbegin', '<div class="demo-bar">Versión de demostración · datos ficticios · nada sale del navegador</div>');
+  const dn = $('#demoNote'); if (dn) dn.hidden = false;
+  if (S.view === 'panel') S.view = 'ia-mapa';
+  render();
+}
 async function cargarEstado() {
-  try { Object.assign(PANEL, await (await fetch(API + '/estado')).json()); } catch (e) { setSync(false, 'Sin conexión al servidor'); }
+  try {
+    const r = await fetch(API + '/estado');
+    if (r.status === 404) activarDemo();
+    else Object.assign(PANEL, await r.json());
+  } catch (e) { if (location.protocol === 'file:') activarDemo(); else setSync(false, 'Sin conexión al servidor'); }
   const cf = $('#claveField'); if (cf) cf.hidden = !PANEL.requiereClave;
   const off = $('#panelOff'); if (off) off.hidden = PANEL.habilitado;
 }
 
 async function initRuntime() {
   if (!S.sesion || DB || !PANEL.habilitado) return;
+  // En la demo no hay base: todo queda en memoria (y Procesos IA, en localStorage).
+  if (DEMO) { DL = DL_LOCAL; setSync(false, 'Demo: los datos quedan en este navegador'); return; }
   DL = DL_LOCAL; SAMPLE = true;
   DB = crearDB();
   setSync(true, 'Guardado en el servidor');
@@ -1034,6 +1091,7 @@ async function cargarMaestrosDemo(cid) {
 function go(view, params = {}) { S.view = view; S.params = params; render(); $('#view').focus({ preventScroll: true }); window.scrollTo(0, 0); }
 const NAV = [
   ['inicio', 'Inicio', [['panel', 'Panel']]],
+  ['ia', 'Procesos IA', [['ia-mapa', 'Mapa de procesos'], ['ia-fact', '1 · Facturación'], ['ia-cobro', '2 y 7 · Cobranza'], ['ia-f29', '3 · F29 y Previred'], ['ia-recordatorios', '4 · Recordatorios'], ['ia-bandeja', '5 · Correos entrantes']]],
   ['operacion', 'Operación', [['lotes', 'Lotes de comprobantes'], ['nuevo', 'Nuevo lote'], ['carga', 'Carga Defontana']]],
   ['procesos', 'Procesos', [['procesos', 'Procesos por cliente'], ['correos', 'Correos tributarios']]],
   ['mant', 'Mantenedores', [['clientes', 'Clientes'], ['cuentas', 'Plan de cuentas'], ['centros', 'Centros de costo'], ['reglas', 'Reglas de validación'], ['usuarios', 'Usuarios']]]
@@ -1051,7 +1109,13 @@ const ICO_PATHS = {
   centros: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',
   reglas: '<path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
   usuarios: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/>',
-  alerta: '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17.5v.5"/>'
+  alerta: '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17.5v.5"/>',
+  'ia-mapa': '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+  'ia-fact': '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+  'ia-cobro': '<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>',
+  'ia-f29': '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/><path d="M16 3v4"/>',
+  'ia-recordatorios': '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  'ia-bandeja': '<path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5 5h14l2 8v6H3v-6z"/>'
 };
 const ico = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO_PATHS[k] || ''}</svg>`;
 function renderNav() {
@@ -1072,7 +1136,8 @@ function render() {
     panel: vPanel, lotes: vLotes, lote: vLote, nuevo: vNuevo, carga: vCarga,
     procesos: vProcesos, correos: vCorreos, 'nuevo-proceso': vNuevoProceso, proceso: vProceso,
     clientes: vClientes, cliente: vCliente, cuentas: () => vMant('cuentas'), centros: () => vMant('centros'), usuarios: () => vMant('usuarios'),
-    reglas: vReglas, 'mant-form': vMantForm, 'mant-import': vMantImport
+    reglas: vReglas, 'mant-form': vMantForm, 'mant-import': vMantImport,
+    'ia-mapa': vIaMapa, 'ia-fact': vIaFact, 'ia-cobro': vIaCobro, 'ia-f29': vIaF29, 'ia-recordatorios': vIaRecordatorios, 'ia-bandeja': vIaBandeja
   }[S.view] || vPanel;
   const ci = $('#chatIn'); const keepChat = ci ? ci.value : null; const hadFocus = ci && document.activeElement === ci;
   $('#view').innerHTML = V();
@@ -1666,6 +1731,7 @@ function vReglas() {
 function vAsistentePanel() {
   const hasData = S.lotes.length > 0 || S.clientes.length > 0;
   const header = `<div class="aw-head"><b>Asistente</b><button class="aw-close" data-a="aw-toggle" aria-label="Cerrar asistente">✕</button></div>`;
+  if (DEMO) return header + `<div class="aw-body"><p class="muted">En la versión de demostración el asistente está apagado: necesita el servidor del estudio para consultar al modelo.</p></div>`;
   if (!SAMPLE) return header + `<div class="aw-body"><p class="muted">El asistente no está disponible: ingresa al panel para hacer consultas sobre los comprobantes.</p></div>`;
   const sug = ['¿Por qué no cuadra mayo y en qué cuenta está la diferencia?', '¿Qué cuentas tienen más movimientos en junio?', 'Busca movimientos de marzo sin centro de costo', '¿Cuánto se vendió cada mes, según la cuenta de ventas?'];
   return header + `
@@ -1788,7 +1854,7 @@ document.addEventListener('click', async e => {
   const a = el.dataset.a;
   const L = () => lote(S.params.id);
   switch (a) {
-    case 'go': if (el.dataset.v === 'nuevo' && !S.clientes.length) toast('Primero agrega un cliente'); go(el.dataset.v, el.dataset.cid ? { cid: el.dataset.cid } : {}); break;
+    case 'go': if (el.dataset.v === 'nuevo' && !S.clientes.length) toast('Primero agrega un cliente'); go(el.dataset.v, el.dataset.cid ? { cid: el.dataset.cid } : el.dataset.f ? { f: el.dataset.f } : {}); break;
     case 'open-lote': e.stopPropagation(); go('lote', { id: el.dataset.id, tab: el.dataset.tab || 'validacion', mes: el.dataset.mes }); break;
     case 'open-cliente': go('cliente', { id: el.dataset.id }); break;
     case 'nuevo-para': S.nuevoCliente = el.dataset.cid; go('nuevo'); break;
@@ -1967,10 +2033,12 @@ document.addEventListener('click', async e => {
       lsSet('ac_sesion', JSON.stringify(S.sesion)); render(); initRuntime(); break;
     }
     case 'cerrar-sesion': salir(); break;
+    default: if (a.startsWith('ia-')) await iaAccion(a, el); break;
     case 'toggle-tema': { S.tema = { light: 'dark', dark: 'auto', auto: 'light' }[S.tema] || 'light'; lsSet('ac_tema', S.tema); aplicarTema(); renderChrome(); break; }
   }
 });
 document.addEventListener('change', e => {
+  if (iaCambio(e.target)) return;
   if (e.target.id === 'filePick') { stage(e.target.files); e.target.value = ''; }
   if (e.target.id === 'selCliente') S.nuevoCliente = e.target.value;
   if (e.target.id === 'reglasCliente') go('reglas', { cid: e.target.value });
@@ -2019,6 +2087,516 @@ async function reattach(fileList) {
   (l.correcciones || []).forEach(c => aplicarRelleno(l, c.columna, c.valor));
   recalcular(l); await saveLote(l); render();
   toast(arr.length + ' de ' + esperados.size + ' archivos adjuntados');
+}
+
+/* ============================ procesos IA (flujorama) ============================ */
+// Prototipo navegable de los nueve procesos del flujorama que entregó el estudio.
+// Todo lo de esta sección es demostración: empresas y montos ficticios, envíos
+// simulados, y el estado vive en este navegador (localStorage), no en el
+// servidor. Cuando un proceso pase a producción, su estado se muda a una
+// colección del panel, como clientes y lotes.
+const IA_KEY = 'ac_ia_v1';
+const fechaCorta = d => pad(d.getDate()) + '-' + pad(d.getMonth() + 1) + '-' + d.getFullYear();
+const isoDia = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const deIso = s => { const [y, m, d] = String(s).split('-').map(Number); return new Date(y, m - 1, d); };
+const hoyDia = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+const pesos = n => '$' + groupThousands(String(Math.round(n)));
+const IVA = 0.19;
+function dvRut(n) { let s = 0, m = 2; for (const c of String(n).split('').reverse()) { s += +c * m; m = m === 7 ? 2 : m + 1; } const r = 11 - (s % 11); return r === 11 ? '0' : r === 10 ? 'K' : String(r); }
+
+const IA_EQUIPO = {
+  aquiles: { nombre: 'Aquiles', correo: 'aquiles@gvergara-auditor.cl' },
+  yenifer: { nombre: 'Yenifer', correo: 'yenifer@gvergara-auditor.cl' },
+  gvergara: { nombre: 'G. Vergara', correo: 'gvergara@gvergara-auditor.cl' },
+  claudia: { nombre: 'Claudia', correo: 'claudiapinto@gyfal.cl' },
+  javier: { nombre: 'Javier', correo: 'javier@gvergara-auditor.cl' },
+  yahel: { nombre: 'Yahel', correo: 'yahel@vergarayvasquezauditores.com' }
+};
+// Empresas de ejemplo con la forma de las hojas entregadas (F29, Previred, facturas
+// del día 5 y contactos). Las reales no se copian aquí: las hojas traen claves.
+const IA_EMPRESAS = [
+  { id: 'aromos', rut: 76123456, nombre: 'Constructora Los Aromos SpA', encargado: 'claudia', f29: true, previred: true, factura: { uf: 6 }, correos: ['finanzas@losaromos.ejemplo.cl', 'gerencia@losaromos.ejemplo.cl'], alias: ['aromos'] },
+  { id: 'gastro', rut: 77234561, nombre: 'Gastronómica Del Puerto Ltda.', encargado: 'yahel', f29: true, previred: true, factura: { uf: 8.5, nota: 'Reajuste de honorarios en enero: +0,5 UF' }, correos: ['admin@gastropuerto.ejemplo.cl'], alias: ['gastronomica', 'del puerto'] },
+  { id: 'andes', rut: 78345672, nombre: 'Transportes Andes Sur Ltda.', encargado: 'javier', f29: true, previred: true, factura: { clp: 420000 }, correos: ['finanzas@andessur.ejemplo.cl', 'operaciones@andessur.ejemplo.cl'], alias: ['andes sur'] },
+  { id: 'cerro', rut: 76456783, nombre: 'Inmobiliaria Cerro Alegre SpA', encargado: 'claudia', f29: true, previred: false, factura: { uf: 3 }, correos: ['contacto@cerroalegre.ejemplo.cl'], alias: ['cerro alegre'] },
+  { id: 'sonrisa', rut: 77567894, nombre: 'Clínica Dental Sonrisa SpA', encargado: 'yenifer', f29: true, previred: true, factura: { uf: 4.5 }, correos: ['contacto@sonrisa.ejemplo.cl', 'dueno@sonrisa.ejemplo.cl'], alias: ['clinica', 'sonrisa'] },
+  { id: 'invsonrisa', rut: 76678905, nombre: 'Inversiones Sonrisa Ltda.', encargado: 'yenifer', f29: true, previred: false, factura: null, correos: ['contacto@sonrisa.ejemplo.cl', 'dueno@sonrisa.ejemplo.cl'], alias: ['inversiones sonrisa'] },
+  { id: 'nuble', rut: 78789016, nombre: 'Comercial Ñuble Ltda.', encargado: 'javier', f29: true, previred: false, factura: { clp: 280000, nota: 'Empieza a facturarse el próximo mes' }, correos: ['ventas@nuble.ejemplo.cl'], alias: ['nuble'] },
+  { id: 'maiten', rut: 76890127, nombre: 'Servicios Agrícolas El Maitén SpA', encargado: 'aquiles', f29: true, previred: true, factura: { uf: 5 }, correos: [], alias: ['maiten'] },
+  { id: 'union', rut: 77901238, nombre: 'Ferretería La Unión Ltda.', encargado: 'claudia', f29: true, previred: false, factura: null, correos: ['ferreteria@launion.ejemplo.cl'], alias: ['ferreteria', 'la union'] },
+  { id: 'camilo', rut: 76012349, nombre: 'Panadería San Camilo EIRL', encargado: null, f29: true, previred: false, factura: null, correos: ['sancamilo@ejemplo.cl', 'contabilidad.sancamilo@ejemplo.cl'], alias: ['san camilo', 'panaderia'] },
+  { id: 'pacifico', rut: 77123450, nombre: 'Consultora Pacífico SpA', encargado: 'javier', f29: true, previred: true, factura: { uf: 3.5 }, correos: ['pagos@pacifico.ejemplo.cl', 'gerencia@pacifico.ejemplo.cl'], alias: ['pacifico'] },
+  { id: 'valle', rut: 78234561, nombre: 'Importadora Valle Central SpA', encargado: 'yenifer', f29: true, previred: true, factura: { clp: 390000 }, correos: [], alias: ['valle central'] },
+  { id: 'rossel', rut: 76345672, nombre: 'Rossel y Fuentes Abogados', encargado: null, f29: false, previred: false, factura: null, correos: ['administracion@rosselyfuentes.ejemplo.cl'], alias: ['rossel'], rossel: true }
+].map(e => ({ ...e, rutTxt: groupThousands(String(e.rut)) + '-' + dvRut(e.rut) }));
+const iaEmp = id => IA_EMPRESAS.find(e => e.id === id);
+
+const IA_ESTADOS = { demo: ['Demo navegable', 'ok'], diseno: ['En diseño', 'neutral'], validar: ['Por validar acceso', 'warn'] };
+const IA_PROCS = [
+  { n: 1, acceso: true, vista: 'ia-fact', nombre: 'Facturación', etapa: 'Facturar', estado: 'demo', cuando: 'Día 5 de cada mes, y cuando hay que facturar a un cliente', sistemas: ['SII', 'Correo'],
+    avance: 'Lista del día 5, cálculo UF × valor de la UF del día 5, factura y correo para revisar, y aprobación de una persona antes de enviar.',
+    falta: 'Emitir la factura en el SII con un robot: hay que validar el acceso. En la demo la emisión es simulada.',
+    porDefinir: ['Cómo se aplican las notas por cliente, como reajustes o inicios en otro mes.', 'Si el monto pactado en UF o en pesos es neto o ya incluye IVA (la demo lo trata como neto).'] },
+  { n: 2, vista: 'ia-cobro', nombre: 'Cobranza de facturas', etapa: 'Cobrar', estado: 'demo', cuando: 'Días 10 y 25 de cada mes, y cada vez que una persona avisa un pago', sistemas: ['Base de facturas', 'Correo'],
+    avance: 'Registro de pagos, lista de facturas adeudadas, selección de cuáles cobrar y correo tipo con el PDF adjunto.',
+    falta: 'Conectar el envío real desde el correo del estudio.',
+    porDefinir: ['El registro de pagadas va en la misma base del proceso 3: así quedó armado en la demo.'] },
+  { n: 3, acceso: true, vista: 'ia-f29', nombre: 'Base de facturas y correos tipo', etapa: 'Transversal', estado: 'demo', cuando: 'Al emitir cada factura. F29 y Previred cuando llegan los montos de los encargados', sistemas: ['SII', 'Base de datos', 'Previred', 'Correo'],
+    avance: 'Base de facturas compartida con los procesos 1, 2 y 7. Correo F29 + Previred que junta las empresas con los mismos destinatarios y alerta si falta un monto.',
+    falta: 'Leer los montos desde el correo del encargado (PDF o valores) y descargar los PDF de F29 y Previred.',
+    porDefinir: ['Qué base de datos usar y qué campos guardar. Los destinatarios salen del archivo de contactos.', 'A qué correo llegan los montos de los encargados, y hasta qué día deben llegar.', 'Si la hoja de facturas del día 5 sirve como punto de partida de la base de facturas.'] },
+  { n: 4, vista: 'ia-recordatorios', nombre: 'Recordatorio de vencimientos de Previred y F29', etapa: 'Vencimientos', estado: 'demo', cuando: 'Dos y un día antes de cada vencimiento: Previred el 13, F29 el 20', sistemas: ['Base de empresas', 'Correo'],
+    avance: 'Calendario del mes con los días de recordatorio, empresas que reciben cada uno, correo tipo y aviso de empresas sin correo.',
+    falta: 'Programar el envío automático en esos días.',
+    porDefinir: ['Si los recordatorios de 2 y 1 día antes aplican también al F29.', 'Qué pasa si el 13 o el 20 cae en fin de semana o feriado (la demo permite ver ambas opciones).', '4 empresas no tienen correo en el archivo, y 2 de las hojas F29 y Previred no están en él.', 'Cómo se actualiza la base: editarla directamente o pedírselo a la IA.', 'Si además se quiere verificar el pago después del vencimiento.'] },
+  { n: 5, vista: 'ia-bandeja', nombre: 'Orden y distribución de correos', etapa: 'Transversal', estado: 'demo', cuando: 'Cada vez que llega un correo a contacto@vergarayvasquez.com', sistemas: ['Correo'],
+    avance: 'Identifica la empresa, clasifica según la tabla de categorías y deriva: la categoría gana sobre el encargado; sin encargado, a Aquiles.',
+    falta: 'Conectar la casilla y reemplazar las palabras clave de la demo por la clasificación con IA.',
+    porDefinir: ['Faltan las demás categorías, si las hay.', 'Cambiar en la base a Yenifer como encargada de las empresas que figuran con Matías.', 'Agregar a Yahel para lo contable de Gastronómica y a Aquiles para lo demás.', 'Si Yahel lleva otras empresas.', 'Cómo se actualiza la base de encargados.', 'Confirmar que la categoría gana sobre el encargado en todas las categorías.', 'Si se reenvía el correo tal cual o con un resumen.', 'Si un mismo correo puede ir a más de una persona.', 'Cómo distinguir un correo de impuestos de una consulta sobre impuestos.', 'Si además se responde al remitente con un correo tipo.'] },
+  { n: 6, vista: null, nombre: 'Balances desde Defontana', etapa: 'Controlar', estado: 'diseno', cuando: 'Cierre mensual (fecha por definir)', sistemas: ['Defontana'],
+    avance: 'El panel ya lee los Excel exportados de Defontana y cuadra por cuenta (ver Lotes de comprobantes). Falta el criterio para clasificar las cuentas del balance.',
+    falta: 'Definir el criterio de clasificación y el formato de entrega.',
+    porDefinir: ['Criterio de clasificación de cuentas.', 'Formato de entrega (Excel, PDF o pantalla).'] },
+  { n: 7, vista: 'ia-cobro', vistaP: { f: 'rossel' }, nombre: 'Cobranza con Rossel y Fuentes Abogados', etapa: 'Cobrar', estado: 'demo', cuando: 'Mismo calendario que el proceso 2', sistemas: ['Base de facturas', 'Correo'],
+    avance: 'Usa la misma base y el mismo flujo que la cobranza: un filtro muestra solo sus facturas.',
+    falta: 'Saber cómo y cuándo se le factura, porque no está en la hoja del día 5.',
+    porDefinir: ['Si usa las mismas fechas, el mismo correo y el mismo criterio de pago que el proceso 2.', 'Rossel y Fuentes no está en la hoja de facturas del día 5: falta saber cómo y cuándo se le factura.'] },
+  { n: 8, acceso: true, vista: null, nombre: 'Revisión de impuestos internos', etapa: 'Vencimientos', estado: 'validar', cuando: 'Periódico (frecuencia por definir)', sistemas: ['SII'],
+    avance: 'Flujo definido: entrar al SII por empresa, revisar rentas y observaciones del F29, alertar o registrar como revisado.',
+    falta: 'Probar si el SII permite el acceso automático con las claves, y cómo resguardarlas.',
+    porDefinir: ['Qué otros formularios se revisan (la nota quedó cortada en "las de ej...").', 'Si el SII permite el acceso automático con esas claves.', 'A 8 empresas de la hoja les falta la clave.', 'Cómo se protege el archivo con las claves mientras lo usa la IA.'] },
+  { n: 9, acceso: true, vista: null, nombre: 'Control de contabilizaciones en Defontana', etapa: 'Controlar', estado: 'validar', cuando: 'Periódico (frecuencia por definir)', sistemas: ['Defontana'],
+    avance: 'Flujo definido: revisar hasta qué fecha está contabilizada cada cuenta (por ejemplo, banco) y alertar con la última fecha.',
+    falta: 'Validar si el robot entra a Defontana por API o por navegador.',
+    porDefinir: ['Si el robot puede ingresar a Defontana (por API o por navegador).', 'Qué cuentas y qué atraso cuentan como alerta.'] }
+];
+
+// Orden importa: la primera que calza gana. Las más específicas van antes
+// (una "transferencia de sueldos" no es "otras transferencias", y una consulta
+// sobre IVA no es un trámite de impuestos). En producción clasifica el modelo
+// con esta misma tabla; aquí, palabras clave para que la demo no dependa del servidor.
+const IA_CATEGORIAS = [
+  { id: 'finiquitos', nombre: 'Finiquitos y sus cálculos', a: 'aquiles', re: /finiquit/ },
+  { id: 'transf_rem', nombre: 'Transferencias de remuneraciones', a: 'aquiles', re: /transferencia.{0,40}(remuneracion|sueldo)|(remuneracion|sueldo).{0,40}transferencia/ },
+  { id: 'transf_otras', nombre: 'Otras transferencias', a: 'yenifer', re: /transferencia/ },
+  { id: 'fichas', nombre: 'Ingreso de fichas de contratos', a: 'yenifer', re: /contrato|ficha|nuevo trabajador|nueva trabajadora/ },
+  { id: 'previred', nombre: 'Previred', a: 'aquiles', re: /previred|cotizaciones|\bafp\b|isapre/ },
+  { id: 'remuneraciones', nombre: 'Remuneraciones', a: 'aquiles', re: /remuneracion|liquidacion(es)? de sueldo|sueldo|horas extra/ },
+  { id: 'consulta_imp', nombre: 'Consultas sobre impuestos', a: 'gvergara', re: /(consulta|duda|pregunta).{0,80}(impuesto|iva|renta|f29|credito fiscal|sii)|(impuesto|iva|renta|f29|sii).{0,80}(consulta|duda|pregunta)/ },
+  { id: 'impuestos', nombre: 'Impuestos', a: 'aquiles', re: /impuesto|\biva\b|\bf ?29\b|\bppm\b|\bsii\b|formulario 29/ },
+  { id: 'emision', nombre: 'Emisión de facturas de empresas', a: 'yenifer', re: /emitir.{0,20}factura|emision de factura|necesito facturar|hacer una factura/ }
+];
+const IA_BANDEJA = [
+  { de: 'gerencia@losaromos.ejemplo.cl', asunto: 'Liquidaciones de sueldo octubre', cuerpo: 'Adjunto planilla con las horas extra para las liquidaciones de este mes.' },
+  { de: 'finanzas@andessur.ejemplo.cl', asunto: 'Consulta sobre IVA de importación', cuerpo: 'Tenemos una duda: ¿el IVA pagado en aduana se puede usar como crédito fiscal?' },
+  { de: 'contacto@sonrisa.ejemplo.cl', asunto: 'Nueva asistente', cuerpo: 'Les envío el contrato firmado de la nueva asistente para que ingresen su ficha.' },
+  { de: 'admin@gastropuerto.ejemplo.cl', asunto: 'Facturas de compra septiembre', cuerpo: 'Adjunto las facturas de proveedores del mes para su contabilización.' },
+  { de: 'admin@gastropuerto.ejemplo.cl', asunto: 'Cálculo de finiquito', cuerpo: 'Necesitamos el cálculo del finiquito de un garzón que renuncia el 31.' },
+  { de: 'pagos@pacifico.ejemplo.cl', asunto: 'Comprobante', cuerpo: 'Adjunto el comprobante de la transferencia de remuneraciones de octubre.' },
+  { de: 'ventas@nuble.ejemplo.cl', asunto: 'Cartola banco', cuerpo: 'Envío la cartola de septiembre de la cuenta corriente.' },
+  { de: 'finanzas@losaromos.ejemplo.cl', asunto: 'F29 de este mes', cuerpo: '¿Cuál es el monto del F29 que tenemos que pagar?' },
+  { de: 'sancamilo@ejemplo.cl', asunto: 'Documentos', cuerpo: 'Les dejo las boletas de honorarios del mes.' },
+  { de: 'persona.nueva@gmail.com', asunto: 'Información', cuerpo: 'Hola, quisiera saber si llevan la contabilidad de pymes.' }
+];
+// Feriados de 2026 como referencia para el corrimiento de vencimientos. Si el
+// estudio decide correr las fechas, esta lista debe venir de una fuente oficial.
+const IA_FERIADOS = new Set(['2026-01-01', '2026-04-03', '2026-04-04', '2026-05-01', '2026-05-21', '2026-06-21', '2026-06-29', '2026-07-16', '2026-08-15', '2026-09-18', '2026-09-19', '2026-10-12', '2026-10-31', '2026-11-01', '2026-12-08', '2026-12-25']);
+const habil = d => d.getDay() !== 0 && d.getDay() !== 6 && !IA_FERIADOS.has(isoDia(d));
+
+function iaSemilla() {
+  const h = hoyDia();
+  let folio = 1180;
+  const facturas = [];
+  const fac = (empresaId, mesesAtras, neto, diasPago) => {
+    const fecha = new Date(h.getFullYear(), h.getMonth() - mesesAtras, 5);
+    const iva = Math.round(neto * IVA);
+    facturas.push({ id: uid('fac'), folio: ++folio, empresaId, fecha: isoDia(fecha), neto, iva, total: neto + iva, envio: 'enviada',
+      estado: diasPago ? 'pagada' : 'pendiente', fechaPago: diasPago ? isoDia(new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate() + diasPago)) : null, cobros: [] });
+  };
+  fac('aromos', 2, 236400, 8); fac('gastro', 2, 334900, 12); fac('andes', 2, 420000, 20); fac('pacifico', 2, 137900, 0); fac('rossel', 2, 650000, 0);
+  fac('aromos', 1, 237600, 9); fac('gastro', 1, 336600, 0); fac('andes', 1, 420000, 0); fac('cerro', 1, 118800, 6); fac('sonrisa', 1, 178200, 4);
+  fac('maiten', 1, 198000, 15); fac('pacifico', 1, 138600, 0); fac('valle', 1, 390000, 11); fac('rossel', 1, 650000, 0);
+  // Un cobro ya enviado en el último día de cobranza, para que la columna no parta vacía.
+  facturas.filter(f => f.estado === 'pendiente' && f.fecha < isoDia(new Date(h.getFullYear(), h.getMonth() - 1, 6))).forEach(f => f.cobros.push(isoDia(new Date(h.getFullYear(), h.getMonth() - 1, 10))));
+  return {
+    facturas, uf: null, ufFuente: '', excluir: {}, ver: null, corrigiendo: null, borradoresCobro: [],
+    // Montos F29 y Previred del período que informan los encargados. Faltan
+    // algunos a propósito, para mostrar la alerta.
+    montos: { aromos: { f29: 1845300, previred: 2210450 }, gastro: { f29: 3120800, previred: 4380120 }, andes: { f29: 960400, previred: 1730900 }, cerro: { f29: 412000 },
+      sonrisa: { f29: 688200, previred: 905300 }, invsonrisa: { f29: 154900 }, nuble: { f29: 233100 }, maiten: { f29: 501200 }, union: {}, camilo: { f29: 98700 },
+      pacifico: { f29: 742600, previred: 611800 }, valle: { f29: 1290300, previred: 840500 } },
+    enviados: {}, log: [{ fecha: hoy(), proc: 0, texto: 'Demo preparada con 13 empresas y ' + facturas.length + ' facturas de ejemplo' }]
+  };
+}
+function iaCargar() { try { const raw = lsGet(IA_KEY); if (raw) return JSON.parse(raw); } catch (e) {} return iaSemilla(); }
+let IA = iaCargar();
+function iaGuardar() { lsSet(IA_KEY, JSON.stringify(IA)); }
+function iaLog(proc, texto) { IA.log.unshift({ fecha: hoy(), proc, texto }); IA.log = IA.log.slice(0, 40); iaGuardar(); }
+
+/** Próximo día de cobranza (10 o 25), desde hoy. */
+function proxCobro() {
+  const h = hoyDia();
+  for (let i = 0; i < 3; i++) for (const d of [10, 25]) { const f = new Date(h.getFullYear(), h.getMonth() + i, d); if (f >= h) return f; }
+}
+/** Vencimiento del mes; si `correr`, pasa al siguiente día hábil. */
+function vencimiento(anio, mes, dia, correr) {
+  const d = new Date(anio, mes, dia);
+  if (correr) while (!habil(d)) d.setDate(d.getDate() + 1);
+  return d;
+}
+/** Los dos días de recordatorio antes del vencimiento: corridos, o hábiles si `correr`. */
+function diasRecordatorio(venc, correr) {
+  const out = []; const d = new Date(venc);
+  while (out.length < 2) { d.setDate(d.getDate() - 1); if (!correr || habil(d)) out.unshift(new Date(d)); }
+  return out;
+}
+function mailBox(m) {
+  return `<div class="ia-mail"><dl><dt>Para</dt><dd>${m.para?.length ? esc(m.para.join(', ')) : '<span class="tag err">Sin correo en el archivo de contactos</span>'}</dd><dt>Asunto</dt><dd><b>${esc(m.asunto)}</b></dd>${m.adjuntos?.length ? `<dt>Adjuntos</dt><dd>${m.adjuntos.map(esc).join(', ')}</dd>` : ''}</dl><div class="cuerpo">${esc(m.cuerpo)}</div></div>`;
+}
+const CUENTA_ESTUDIO = '[razón social], [RUT], [banco], [tipo y número de cuenta]';
+const demoNota = () => `<p class="note" style="margin-bottom:20px">Demostración con datos ficticios: las empresas, montos y correos son de ejemplo y ningún envío sale de verdad. Lo que hagas aquí queda solo en este navegador. <button class="link" data-a="ia-reiniciar">Reiniciar la demo</button></p>`;
+function iaHead(n, titulo, lede, extra = '') {
+  const p = IA_PROCS.find(x => x.n === n);
+  return `<div class="head"><div><p class="muted crumb">Procesos IA · Proceso ${n}${p ? ' · ' + IA_ESTADOS[p.estado][0] : ''}</p><h1>${titulo}</h1><p class="lede">${lede}</p></div>${extra}</div>${demoNota()}`;
+}
+
+/* ---------- mapa ---------- */
+function vIaMapa() {
+  const cnt = k => IA_PROCS.filter(p => p.estado === k).length;
+  const abiertas = IA_PROCS.reduce((n, p) => n + p.porDefinir.length, 0);
+  const h = hoyDia();
+  const ciclo = [[5, 'Facturar', 'Proceso 1'], [10, 'Cobrar', 'Procesos 2 y 7'], [11, 'Recordar Previred', 'Proceso 4'], [13, 'Vence Previred', 'Procesos 3 y 4'], [18, 'Recordar F29', 'Proceso 4'], [20, 'Vence F29', 'Procesos 3 y 4'], [25, 'Cobrar', 'Procesos 2 y 7']];
+  const prox = ciclo.find(c => c[0] >= h.getDate()) || ciclo[0];
+  return `
+  <div class="head"><div><p class="muted crumb">Procesos IA</p><h1>Mapa de procesos</h1><p class="lede">Los nueve procesos contables y de cobranza del flujorama: qué ya se puede probar en esta demo, qué depende de validar accesos y qué falta definir con el estudio.</p></div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="k-l"><i>${ico('procesos')}</i>Procesos</div><div class="k-v">${IA_PROCS.length}</div></div>
+    <div class="kpi good"><div class="k-l"><i>${ico('ia-mapa')}</i>Con demo navegable</div><div class="k-v">${cnt('demo')}</div></div>
+    <div class="kpi"><div class="k-l"><i>${ico('alerta')}</i>Requieren validar acceso</div><div class="k-v">${IA_PROCS.filter(p => p.acceso).length}</div></div>
+    <div class="kpi"><div class="k-l"><i>${ico('reglas')}</i>Puntos por definir</div><div class="k-v">${abiertas}</div></div>
+  </div>
+  <div class="sheet"><h2>Ciclo mensual</h2>
+    <div class="ia-ciclo">${ciclo.map(c => `<div class="ia-dia ${c === prox ? 'prox' : ''}"><span class="small muted">Día</span><b>${c[0]}${c[0] === 11 ? '–12' : c[0] === 18 ? '–19' : ''}</b><span>${c[1]}</span><span class="small muted">${c[2]}</span></div>`).join('')}
+      <div class="ia-dia"><span class="small muted">Siempre</span><b>∞</b><span>Correos entrantes y base de facturas</span><span class="small muted">Procesos 3 y 5</span></div></div>
+  </div>
+  <div class="ia-grid">${IA_PROCS.map(p => { const [t, k] = IA_ESTADOS[p.estado]; return `
+    <div class="sheet ia-card">
+      <div class="ia-h"><span class="ia-n">${p.n}</span><div style="flex:1;min-width:0"><h3>${esc(p.nombre)}</h3><span class="small muted">${esc(p.etapa)} · ${esc(p.cuando)}</span></div></div>
+      <div class="row" style="justify-content:space-between"><span class="tag ${k}">${t}</span><span class="ia-sis">${p.sistemas.map(s => `<span>${esc(s)}</span>`).join('')}</span></div>
+      <p class="small" style="margin:0">${esc(p.avance)}</p>
+      <p class="small muted" style="margin:0"><b>Siguiente paso:</b> ${esc(p.falta)}</p>
+      <details><summary>Por definir (${p.porDefinir.length})</summary><ul>${p.porDefinir.map(x => `<li>${esc(x)}</li>`).join('')}</ul></details>
+      ${p.vista ? `<div class="ia-foot"><button class="btn sm" data-a="go" data-v="${p.vista}" ${p.vistaP?.f ? `data-f="${p.vistaP.f}"` : ''}>Abrir demo</button></div>` : p.n === 6 ? `<div class="ia-foot"><button class="btn ghost sm" data-a="go" data-v="lotes">Ver lotes de comprobantes</button></div>` : ''}
+    </div>`; }).join('')}</div>
+  <div class="grid2 block" style="margin-top:20px">
+    <div class="sheet"><h2>Cómo se conectan</h2>
+      <p>El <b>proceso 3</b> es el eje: recibe cada factura emitida en el 1, guarda sus datos y entrega los correos tipo a la cobranza (2 y 7). El <b>4</b> parte de la base de empresas que pagan F29 y Previred, y el <b>5</b> usa la misma base para saber el encargado de cada empresa.</p>
+      <p class="muted small" style="margin:0">Los procesos 1, 3, 8 y 9 necesitan que un robot entre al SII, a Previred o a Defontana con la clave de cada empresa. Eso se valida antes de construirlos; mientras tanto, la demo simula esos pasos.</p>
+    </div>
+    <div class="sheet"><h2>Actividad de la demo</h2>
+      ${IA.log.length ? `<table class="ledger"><tbody>${IA.log.slice(0, 8).map(x => `<tr><td class="small muted" style="white-space:nowrap">${fmtFecha(x.fecha)}</td><td class="small">${x.proc ? '<b>P' + x.proc + '</b> · ' : ''}${esc(x.texto)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Sin actividad todavía.</p>'}
+    </div>
+  </div>`;
+}
+
+/* ---------- 1 · facturación ---------- */
+const iaMesTxt = d => MESES[d.getMonth()] + ' ' + d.getFullYear();
+function iaPeriodo() { const h = hoyDia(); return h.getFullYear() + '-' + pad(h.getMonth() + 1); }
+function iaFilasFact() {
+  return IA_EMPRESAS.filter(e => e.factura).map(e => {
+    const neto = e.factura.uf ? (IA.uf ? Math.round(e.factura.uf * IA.uf) : null) : e.factura.clp;
+    return { e, neto, iva: neto == null ? null : Math.round(neto * IVA), incluir: !IA.excluir[e.id] };
+  });
+}
+let iaUfPedida = false;
+async function iaTraerUF() {
+  const h = hoyDia(); const d5 = pad(5) + '-' + pad(h.getMonth() + 1) + '-' + h.getFullYear();
+  try {
+    // Con tope de 5 s: sin él, una red que bloquea el sitio deja la pantalla
+    // "Consultando…" por 20 s antes de caer al valor de referencia.
+    const r = await fetch('https://mindicador.cl/api/uf/' + d5, { signal: AbortSignal.timeout(5000) });
+    const j = await r.json(); const v = j?.serie?.[0]?.valor;
+    if (!v) throw new Error('sin valor');
+    IA.uf = v; IA.ufFuente = 'UF del ' + d5.replace(/-/g, '/') + ' (mindicador.cl, serie del Banco Central)';
+  } catch (e) {
+    // Sin red o sin respuesta: un valor de referencia editable, para que la demo siga.
+    if (!IA.uf) { IA.uf = 39800; IA.ufFuente = 'Valor de referencia: no se pudo consultar la UF, escríbela a mano'; }
+  }
+  iaGuardar();
+}
+function iaCorreoFactura(f) {
+  const e = iaEmp(f.empresaId); const d = deIso(f.fecha);
+  return { para: e.correos, asunto: 'Factura Nº ' + f.folio + ' · ' + iaMesTxt(d) + ' · ' + e.nombre, adjuntos: ['Factura_' + f.folio + '.pdf'],
+    cuerpo: 'Estimados, buenos días\n\nAdjunto envío a ustedes la factura Nº ' + f.folio + ' correspondiente a los servicios de ' + iaMesTxt(d).toLowerCase() + ', por un total de ' + pesos(f.total) + '.\n\nRecordar que la cuenta para el pago es la siguiente: ' + CUENTA_ESTUDIO + '.\n\nDesde ya muchas gracias. Saludos cordiales\nVergara y Vásquez Auditores' };
+}
+function iaPdf(f) {
+  const e = iaEmp(f.empresaId);
+  return `<div class="ia-pdf"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><b>Vergara y Vásquez Auditores Ltda.</b><div class="small">Asesorías contables y tributarias</div></div><div class="ia-folio">FACTURA ELECTRÓNICA<br>Nº ${f.folio}</div></div>
+    <dl class="kv" style="margin:14px 0"><dt>Señor(es)</dt><dd>${esc(e.nombre)}</dd><dt>RUT</dt><dd>${e.rutTxt}</dd><dt>Fecha</dt><dd>${fechaCorta(deIso(f.fecha))}</dd></dl>
+    <table class="ledger"><thead><tr><th>Detalle</th><th class="num">Monto</th></tr></thead><tbody><tr><td>Honorarios por servicios contables, ${iaMesTxt(deIso(f.fecha)).toLowerCase()}${e.factura?.uf ? ' (' + String(e.factura.uf).replace('.', ',') + ' UF)' : ''}</td><td class="num">${pesos(f.neto)}</td></tr>
+    <tr><td class="muted">Neto</td><td class="num">${pesos(f.neto)}</td></tr><tr><td class="muted">IVA 19%</td><td class="num">${pesos(f.iva)}</td></tr><tr class="total"><td>Total</td><td class="num">${pesos(f.total)}</td></tr></tbody></table>
+    <p class="small muted" style="margin:10px 0 0">Vista previa de la demo. La factura real la emite el SII.</p></div>`;
+}
+function vIaFact() {
+  if (!IA.uf && !iaUfPedida) { iaUfPedida = true; iaTraerUF().then(() => { if (S.view === 'ia-fact') render(); }); }
+  const per = iaPeriodo(); const h = hoyDia();
+  const filas = iaFilasFact(); const sel = filas.filter(r => r.incluir && r.neto != null);
+  const delMes = IA.facturas.filter(f => f.fecha.startsWith(per) && f.creadaEnDemo);
+  const porAprobar = delMes.filter(f => f.envio === 'por_aprobar');
+  const emitidas = delMes.length > 0;
+  return iaHead(1, 'Facturación del día 5', 'Se toma la lista de clientes a facturar, se calcula el monto del mes con la UF del día 5, se emite la factura y una persona revisa el correo con el PDF antes de enviarlo.') + `
+  <div class="steps" role="tablist" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:20px">
+    ${[['Calcular montos', IA.uf ? 'ok' : ''], ['Emitir en el SII', emitidas ? 'ok' : ''], ['Revisar y aprobar', emitidas && !porAprobar.length ? 'ok' : porAprobar.length ? 'warn' : ''], ['Enviar y guardar', emitidas && !porAprobar.length ? 'ok' : '']].map(([t, k], i) => `<button class="${k}" aria-selected="false" tabindex="-1"><span class="n"><i class="dot"></i>Paso ${i + 1}</span><span class="t">${t}</span></button>`).join('')}
+  </div>
+  <div class="sheet scroll">
+    <div class="toolbar">
+      <div class="field" style="min-width:200px"><label for="iaUf">Valor de la UF del día 5</label><input type="number" id="iaUf" step="0.01" value="${IA.uf ?? ''}" placeholder="Consultando…" ${emitidas ? 'disabled' : ''}></div>
+      <p class="small muted grow" style="margin:0 0 8px">${esc(IA.ufFuente || 'Consultando el valor de la UF…')}</p>
+      ${emitidas ? '' : `<button class="btn ghost sm" data-a="ia-uf" style="margin-bottom:6px">Volver a consultar</button>`}
+    </div>
+    <h2>Clientes a facturar · ${iaMesTxt(h)}</h2>
+    <table class="ledger"><thead><tr><th></th><th>Cliente</th><th>Pactado</th><th class="num">Neto</th><th class="num">IVA</th><th class="num">Total</th><th>Nota</th></tr></thead><tbody>
+    ${filas.map(r => `<tr><td><input type="checkbox" data-ia-incluir="${r.e.id}" ${r.incluir ? 'checked' : ''} ${emitidas ? 'disabled' : ''} aria-label="Facturar a ${esc(r.e.nombre)}"></td><td><b>${esc(r.e.nombre)}</b><div class="small muted">${r.e.rutTxt}</div></td>
+      <td>${r.e.factura.uf ? String(r.e.factura.uf).replace('.', ',') + ' UF' : pesos(r.e.factura.clp) + ' fijo'}</td><td class="num">${r.neto == null ? '—' : pesos(r.neto)}</td><td class="num">${r.iva == null ? '—' : pesos(r.iva)}</td><td class="num"><b>${r.neto == null ? '—' : pesos(r.neto + r.iva)}</b></td>
+      <td>${r.e.factura.nota ? `<span class="tag warn">Revisar</span><div class="small muted">${esc(r.e.factura.nota)}</div>` : ''}${r.e.correos.length ? '' : '<span class="tag err">Sin correo</span>'}</td></tr>`).join('')}
+    <tr class="total"><td></td><td>${sel.length} facturas</td><td></td><td class="num">${pesos(sel.reduce((s, r) => s + r.neto, 0))}</td><td class="num">${pesos(sel.reduce((s, r) => s + r.iva, 0))}</td><td class="num">${pesos(sel.reduce((s, r) => s + r.neto + r.iva, 0))}</td><td></td></tr>
+    </tbody></table>
+    <div class="row" style="margin-top:14px;justify-content:space-between">
+      <p class="small muted" style="margin:0">Las notas por cliente quedan marcadas para revisión: cómo se aplican es un punto por definir.</p>
+      ${emitidas ? `<button class="btn ghost sm" data-a="ia-fact-reset">Deshacer la emisión de este mes</button>` : `<button class="btn" data-a="ia-fact-emitir" ${sel.length ? '' : 'disabled'}>Emitir ${sel.length} facturas (simulado)</button>`}
+    </div>
+  </div>
+  ${emitidas ? `<section class="block"><div class="row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Revisar y aprobar el envío</h2>${porAprobar.filter(f => iaEmp(f.empresaId).correos.length).length > 1 ? `<button class="btn sm" data-a="ia-fact-aprobar-todas">Aprobar y enviar todas las que tienen correo</button>` : ''}</div>
+    <div class="stack">${delMes.map(f => { const e = iaEmp(f.empresaId); const sinCorreo = !e.correos.length; return `
+      <div class="sheet stack" style="gap:12px">
+        <div class="row" style="justify-content:space-between"><div><b>${esc(e.nombre)}</b> <span class="muted small">Factura Nº ${f.folio} · ${pesos(f.total)}</span></div>
+          ${f.envio === 'enviada' ? '<span class="tag ok">Enviada y guardada en la base</span>' : sinCorreo ? '<span class="tag err">Falta el correo del cliente</span>' : '<span class="tag warn">Espera aprobación</span>'}</div>
+        ${f.envio === 'enviada' ? '' : `${mailBox(iaCorreoFactura(f))}
+        <div class="row"><button class="link small" data-a="ia-ver-pdf" data-id="${f.id}">${IA.ver === f.id ? 'Ocultar el PDF' : 'Ver el PDF de la factura'}</button></div>
+        ${IA.ver === f.id ? iaPdf(f) : ''}
+        ${IA.corrigiendo === f.id ? `<div class="row" style="align-items:flex-end"><div class="field" style="max-width:220px"><label for="iaCorrNeto">Neto corregido</label><input type="number" id="iaCorrNeto" value="${f.neto}"></div><button class="btn sm" data-a="ia-fact-guardar-corr" data-id="${f.id}">Guardar y volver a mostrar</button><button class="btn ghost sm" data-a="ia-fact-corregir" data-id="">Cancelar</button></div>`
+          : `<div class="row"><button class="btn sm" data-a="ia-fact-aprobar" data-id="${f.id}" ${sinCorreo ? 'disabled' : ''}>Aprobar y enviar</button><button class="btn ghost sm" data-a="ia-fact-corregir" data-id="${f.id}">Corregir</button></div>`}`}
+      </div>`; }).join('')}</div></section>` : ''}`;
+}
+
+/* ---------- 2 y 7 · cobranza ---------- */
+function vIaCobro() {
+  const soloRossel = S.params.f === 'rossel';
+  const fs = IA.facturas.filter(f => f.envio === 'enviada' && (!soloRossel || iaEmp(f.empresaId).rossel)).sort((a, b) => (a.estado === b.estado ? b.fecha.localeCompare(a.fecha) : a.estado === 'pendiente' ? -1 : 1));
+  const pend = fs.filter(f => f.estado === 'pendiente');
+  const pc = proxCobro();
+  S.iaSel = S.iaSel || new Set();
+  const sel = pend.filter(f => S.iaSel.has(f.id));
+  const borr = IA.borradoresCobro.map(id => IA.facturas.find(f => f.id === id)).filter(f => f && f.estado === 'pendiente');
+  return iaHead(soloRossel ? 7 : 2, soloRossel ? 'Cobranza con Rossel y Fuentes' : 'Cobranza de facturas', 'Los días 10 y 25 se buscan en la base las facturas sin marca de pagada, se pregunta cuáles cobrar y se arma un correo por factura con su PDF. Cuando alguien avisa un pago, la factura queda como pagada con su fecha.') + `
+  <div class="toolbar" role="group" aria-label="Filtro">
+    <button class="mchip" data-a="go" data-v="ia-cobro" aria-pressed="${!soloRossel}"><b>Todas las facturas</b><span>Proceso 2</span></button>
+    <button class="mchip" data-a="go" data-v="ia-cobro" data-f="rossel" aria-pressed="${soloRossel}"><b>Rossel y Fuentes</b><span>Proceso 7</span></button>
+  </div>
+  <div class="kpis">
+    <div class="kpi ${pend.length ? 'bad' : 'good'}"><div class="k-l"><i>${ico('alerta')}</i>Facturas adeudadas</div><div class="k-v">${pend.length}</div></div>
+    <div class="kpi"><div class="k-l"><i>${ico('ia-cobro')}</i>Monto adeudado</div><div class="k-v">${pesos(pend.reduce((s, f) => s + f.total, 0))}</div></div>
+    <div class="kpi"><div class="k-l"><i>${ico('ia-recordatorios')}</i>Próximo día de cobro</div><div class="k-v">${fechaCorta(pc).slice(0, 5)}</div></div>
+    <div class="kpi good"><div class="k-l"><i>${ico('ia-fact')}</i>Pagadas</div><div class="k-v">${fs.length - pend.length}</div></div>
+  </div>
+  <div class="grid2">
+    <div class="sheet scroll"><h2>Facturas en la base</h2>
+      ${fs.length ? `<table class="ledger"><thead><tr><th></th><th>Nº</th><th>Cliente</th><th>Emitida</th><th class="num">Total</th><th>Estado</th><th>Cobros</th></tr></thead><tbody>
+      ${fs.map(f => `<tr><td>${f.estado === 'pendiente' ? `<input type="checkbox" data-ia-sel="${f.id}" ${S.iaSel.has(f.id) ? 'checked' : ''} aria-label="Cobrar factura ${f.folio}">` : ''}</td><td class="num" style="text-align:left">${f.folio}</td><td>${esc(iaEmp(f.empresaId).nombre)}</td><td>${fechaCorta(deIso(f.fecha))}</td><td class="num">${pesos(f.total)}</td>
+        <td>${f.estado === 'pagada' ? `<span class="tag ok">Pagada</span><div class="small muted">${fechaCorta(deIso(f.fechaPago))}</div>` : `<span class="tag err">Pendiente</span><div><button class="link small" data-a="ia-pagar" data-id="${f.id}">Marcar pagada hoy</button></div>`}</td>
+        <td class="small muted">${f.cobros.length ? f.cobros.map(c => fechaCorta(deIso(c)).slice(0, 5)).join(', ') : '—'}</td></tr>`).join('')}</tbody></table>`
+      : '<p class="muted">No hay facturas enviadas en la base.</p>'}
+      <div class="row" style="margin-top:14px"><button class="btn" data-a="ia-cobro-preparar" ${sel.length ? '' : 'disabled'}>Preparar cobro de ${sel.length || 'las'} seleccionadas</button><span class="small muted">Siempre se pregunta antes de enviar.</span></div>
+    </div>
+    <div class="stack">
+      <div class="sheet"><h2>Avisar un pago</h2><p class="small muted">Lo que hoy le diría una persona a la IA: "se pagó la factura 1187 el 14".</p>
+        <div class="row" style="align-items:flex-end"><div class="field" style="flex:1;min-width:110px"><label for="iaPagoFolio">Nº de factura</label><input type="number" id="iaPagoFolio" placeholder="${pend[0]?.folio || ''}"></div>
+          <div class="field" style="flex:1;min-width:140px"><label for="iaPagoFecha">Fecha de pago</label><input type="text" id="iaPagoFecha" value="${fechaCorta(hoyDia())}"></div>
+          <button class="btn ghost" data-a="ia-pago-registrar">Registrar</button></div></div>
+      <div class="sheet"><h2>Cómo decide</h2><ol class="small muted" style="margin:0;padding-left:18px"><li>Busca en la base las facturas sin marca de pagada.</li><li>Si no hay, no hace nada.</li><li>Si hay, las muestra y pregunta cuáles cobrar.</li><li>Arma un correo por factura con el PDF adjunto, lo envía y anota la fecha.</li></ol></div>
+    </div>
+  </div>
+  ${borr.length ? `<section class="block"><div class="row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">${borr.length} ${borr.length === 1 ? 'correo de cobro' : 'correos de cobro'} para revisar</h2><div class="row"><button class="btn ghost sm" data-a="ia-cobro-cancelar">Cancelar</button><button class="btn sm" data-a="ia-cobro-enviar">Enviar ${borr.length} (simulado)</button></div></div>
+    <div class="stack">${borr.map(f => mailBox({ para: iaEmp(f.empresaId).correos, asunto: 'FACTURA PENDIENTE DE PAGO', adjuntos: ['Factura_' + f.folio + '.pdf'],
+      cuerpo: 'Estimada, adjunto envío a usted Factura Nº ' + f.folio + ', que aún se encuentra pendiente de pago.\n\nRecordar que la cuenta para el pago de estas es la siguiente: ' + CUENTA_ESTUDIO + '.\n\nDesde ya muchas gracias. Saludos cordiales' })).join('')}</div></section>` : ''}`;
+}
+
+/* ---------- 3 · correo F29 y Previred ---------- */
+function iaGruposF29() {
+  const h = hoyDia(); const per = new Date(h.getFullYear(), h.getMonth() - 1, 1);
+  const vPrev = new Date(h.getFullYear(), h.getMonth(), 13), vF29 = new Date(h.getFullYear(), h.getMonth(), 20);
+  const emps = IA_EMPRESAS.filter(e => e.f29 || e.previred);
+  const grupos = new Map();
+  emps.forEach(e => { const k = e.correos.length ? [...e.correos].sort().join(',') : 'sin:' + e.id; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(e); });
+  return { per, vPrev, vF29, emps, grupos: [...grupos.entries()].map(([k, es]) => {
+    const faltan = []; es.forEach(e => { const m = IA.montos[e.id] || {}; if (e.f29 && !m.f29) faltan.push('F29 de ' + e.nombre); if (e.previred && !m.previred) faltan.push('Previred de ' + e.nombre); });
+    const adj = es.flatMap(e => { const fa = IA.facturas.filter(f => f.empresaId === e.id).sort((a, b) => b.fecha.localeCompare(a.fecha))[0]; return [e.f29 && 'F29_' + slug(e.nombre) + '.pdf', e.previred && 'Previred_' + slug(e.nombre) + '.pdf', fa && 'Factura_' + fa.folio + '.pdf'].filter(Boolean); });
+    const cuerpo = 'Estimado/a, buenas tardes\n\nLe informo que los montos a pagar correspondientes al mes de ' + iaMesTxt(per).toLowerCase() + ' son los siguientes:\n\n' + es.map(e => { const m = IA.montos[e.id] || {}; return e.nombre.toUpperCase() + (e.f29 ? '\n• F29 (IVA): ' + (m.f29 ? pesos(m.f29) : '[falta]') + ', con vencimiento para el pago el ' + fechaCorta(vF29) : '') + (e.previred ? '\n• PREVIRED: ' + (m.previred ? pesos(m.previred) : '[falta]') + ', con vencimiento para el pago el ' + fechaCorta(vPrev) : ''); }).join('\n\n') + '\n\nLes recuerdo también la cuenta a transferir: ' + CUENTA_ESTUDIO + '.\n\nSaludos cordiales';
+    return { k, es, faltan, mail: { para: es[0].correos, asunto: 'F29 Y PREVIRED ' + iaMesTxt(per).toUpperCase() + ' ' + es.map(e => e.nombre).join(' / '), adjuntos: adj, cuerpo } };
+  }) };
+}
+function vIaF29() {
+  const { per, vPrev, vF29, emps, grupos } = iaGruposF29();
+  const listos = grupos.filter(g => !g.faltan.length && g.mail.para.length);
+  const env = IA.enviados['f29-' + isoDia(per).slice(0, 7)] || [];
+  return iaHead(3, 'Correos de F29 y Previred', 'Cuando llegan los montos de los encargados, la IA arma el correo tipo de cada cliente, junta en uno solo las empresas que comparten destinatarios, adjunta los PDF que correspondan y alerta si falta algún monto.') + `
+  <div class="grid2">
+    <div class="sheet scroll"><h2>Montos de ${iaMesTxt(per).toLowerCase()} informados por los encargados</h2>
+      <p class="small muted">En producción se leen del correo del encargado (PDF o valores). Aquí puedes editarlos para ver cómo cambian los correos.</p>
+      <table class="ledger"><thead><tr><th>Empresa</th><th>Encargado</th><th class="num">F29</th><th class="num">Previred</th></tr></thead><tbody>
+      ${emps.map(e => { const m = IA.montos[e.id] || {}; return `<tr><td><b>${esc(e.nombre)}</b><div class="small muted">${e.correos.length ? esc(e.correos.join(', ')) : 'sin correo'}</div></td><td class="small">${e.encargado ? IA_EQUIPO[e.encargado].nombre : '<span class="muted">Sin encargado</span>'}</td>
+        <td class="num">${e.f29 ? `<input type="number" data-ia-monto="${e.id}" data-tipo="f29" value="${m.f29 ?? ''}" placeholder="falta" style="width:130px;text-align:right">` : '<span class="muted">no aplica</span>'}</td>
+        <td class="num">${e.previred ? `<input type="number" data-ia-monto="${e.id}" data-tipo="previred" value="${m.previred ?? ''}" placeholder="falta" style="width:130px;text-align:right">` : '<span class="muted">no aplica</span>'}</td></tr>`; }).join('')}
+      </tbody></table></div>
+    <div class="stack">
+      <div class="sheet"><h2>Vencimientos</h2><dl class="kv"><dt>Previred</dt><dd>${fechaCorta(vPrev)}</dd><dt>F29</dt><dd>${fechaCorta(vF29)}</dd><dt>Correos</dt><dd>${grupos.length} para ${emps.length} empresas</dd><dt>Listos</dt><dd>${listos.length}</dd></dl></div>
+      <div class="sheet"><h2>Alertas</h2>${grupos.some(g => g.faltan.length || !g.mail.para.length) ? `<ul class="small" style="margin:0;padding-left:18px">${grupos.flatMap(g => [...g.faltan.map(x => `<li>Falta el monto ${esc(x)}</li>`), ...(g.mail.para.length ? [] : [`<li>${esc(g.es[0].nombre)} no tiene correo en el archivo de contactos</li>`])]).join('')}</ul>` : '<p class="muted">Todos los montos están y todas las empresas tienen correo.</p>'}</div>
+    </div>
+  </div>
+  <section class="block"><div class="row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Correos armados</h2><button class="btn sm" data-a="ia-f29-enviar" ${listos.filter(g => !env.includes(g.k)).length ? '' : 'disabled'}>Enviar los ${listos.filter(g => !env.includes(g.k)).length} listos (simulado)</button></div>
+    <div class="stack">${grupos.map(g => `<div class="sheet stack" style="gap:10px"><div class="row" style="justify-content:space-between"><b>${esc(g.es.map(e => e.nombre).join(' + '))}</b>${env.includes(g.k) ? '<span class="tag ok">Enviado</span>' : g.faltan.length ? '<span class="tag err">Falta ' + g.faltan.length + (g.faltan.length === 1 ? ' monto' : ' montos') + '</span>' : !g.mail.para.length ? '<span class="tag err">Sin destinatarios</span>' : g.es.length > 1 ? '<span class="tag warn">Junta ' + g.es.length + ' empresas</span>' : '<span class="tag ok">Listo</span>'}</div>${mailBox(g.mail)}</div>`).join('')}</div>
+  </section>`;
+}
+
+/* ---------- 4 · recordatorios ---------- */
+function vIaRecordatorios() {
+  const h = hoyDia(); const off = +(S.params.mes || 0); const correr = S.params.habil === '1';
+  const base = new Date(h.getFullYear(), h.getMonth() + off, 1); const y = base.getFullYear(), m = base.getMonth();
+  const vPrev = vencimiento(y, m, 13, correr), vF29 = vencimiento(y, m, 20, correr);
+  const rPrev = diasRecordatorio(vPrev, correr), rF29 = diasRecordatorio(vF29, correr);
+  const ev = {}; const add = (d, t, k) => { const key = isoDia(d); (ev[key] = ev[key] || []).push([t, k]); };
+  add(new Date(y, m, 5), 'Facturar', ''); add(new Date(y, m, 10), 'Cobrar', 'cob'); add(new Date(y, m, 25), 'Cobrar', 'cob');
+  rPrev.forEach(d => add(d, 'Recordar Previred', 'rec')); rF29.forEach(d => add(d, 'Recordar F29', 'rec'));
+  add(vPrev, 'Vence Previred', 'venc'); add(vF29, 'Vence F29', 'venc');
+  const primero = (new Date(y, m, 1).getDay() + 6) % 7; const dias = new Date(y, m + 1, 0).getDate();
+  const celdas = [...Array(primero).fill(null), ...Array.from({ length: dias }, (_, i) => new Date(y, m, i + 1))];
+  const tipos = [['previred', 'Previred', 'cotizaciones', vPrev, rPrev], ['f29', 'F29', 'impuestos', vF29, rF29]];
+  return iaHead(4, 'Recordatorio de vencimientos', 'Dos y un día antes de cada vencimiento se toma de la base a las empresas que pagan Previred (vence el 13) o F29 (vence el 20) y se les envía el recordatorio a sus dos correos.') + `
+  <div class="toolbar">
+    ${selFiltro('mes', 'Mes', [['0', iaMesTxt(new Date(h.getFullYear(), h.getMonth(), 1))], ['1', iaMesTxt(new Date(h.getFullYear(), h.getMonth() + 1, 1))], ['2', iaMesTxt(new Date(h.getFullYear(), h.getMonth() + 2, 1))]])}
+    ${selFiltro('habil', 'Si el vencimiento cae en fin de semana o feriado', [['', 'Mantener el día 13 y 20 (días corridos)'], ['1', 'Correr al siguiente día hábil']])}
+  </div>
+  <div class="grid2">
+    <div class="sheet"><h2>${iaMesTxt(base)}</h2>
+      <div class="ia-cal">${['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => `<div class="dow">${d}</div>`).join('')}
+        ${celdas.map(d => d ? `<div class="d ${habil(d) ? '' : 'off'} ${isoDia(d) === isoDia(h) ? 'hoy' : ''}"><span>${d.getDate()}</span>${(ev[isoDia(d)] || []).map(([t, k]) => `<span class="ev ${k}" title="${t}">${t}</span>`).join('')}</div>` : '<div></div>').join('')}</div>
+      <p class="small muted" style="margin:10px 0 0">Días grises: fin de semana o feriado. ${correr ? 'Con esta opción los recordatorios también caen en días hábiles.' : 'Con esta opción los recordatorios son 2 y 1 días corridos antes, aunque caigan en fin de semana.'}</p>
+    </div>
+    <div class="stack">${tipos.map(([k, n, que, v, r]) => { const es = IA_EMPRESAS.filter(e => e[k]); const sin = es.filter(e => !e.correos.length); const key = 'rec-' + k + '-' + isoDia(v); return `
+      <div class="sheet"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${n}: vence el ${fechaCorta(v)}</h2>${IA.enviados[key] ? '<span class="tag ok">Enviado</span>' : ''}</div>
+        <p class="small muted">Recordatorios el ${r.map(fechaCorta).join(' y el ')}. ${es.length} empresas, ${es.length - sin.length} con correo.</p>
+        ${sin.length ? `<p class="note err small">Sin correo en el archivo de contactos: ${sin.map(e => esc(e.nombre)).join(', ')}.</p>` : ''}
+        <details><summary class="small">Ver el correo tipo</summary>${mailBox({ para: es.find(e => e.correos.length)?.correos, asunto: 'Recordatorio de vencimiento ' + n, cuerpo: 'Estimados, buenos días, les recuerdo que con fecha ' + fechaCorta(v).replace(/-/g, '/') + ' vence el pago correspondiente de ' + que + '.\n\nLes recuerdo efectuar el pago para no generar multas y morosidades.\n\nSaluda atentamente.' })}</details>
+        <button class="btn ghost sm" style="margin-top:10px" data-a="ia-rec-enviar" data-k="${key}" data-n="${n}" data-c="${es.length - sin.length}" ${IA.enviados[key] ? 'disabled' : ''}>Enviar a ${es.length - sin.length} empresas (simulado)</button>
+      </div>`; }).join('')}</div>
+  </div>`;
+}
+
+/* ---------- 5 · bandeja ---------- */
+function iaEmpresaDe(de, t) {
+  const c = norm(de); const dom = c.split('@')[1];
+  return IA_EMPRESAS.find(e => e.correos.some(x => norm(x) === c)) || (dom && dom !== 'gmail.com' && dom !== 'ejemplo.cl' ? IA_EMPRESAS.find(e => e.correos.some(x => x.split('@')[1] === dom)) : null)
+    || IA_EMPRESAS.find(e => e.alias.some(a => t.includes(a))) || null;
+}
+function iaDerivar(m) {
+  const t = norm(m.asunto + ' ' + m.cuerpo);
+  const emp = iaEmpresaDe(m.de || '', t);
+  const cat = IA_CATEGORIAS.find(c => c.re.test(t));
+  let a, motivo;
+  if (cat) { a = cat.a; motivo = 'Categoría "' + cat.nombre + '": gana sobre el encargado'; }
+  else if (emp?.encargado) { a = emp.encargado; motivo = 'Sin categoría: dudas y documentos van al encargado' + (emp.id === 'gastro' ? ' de lo contable' : ''); }
+  else { a = 'aquiles'; motivo = emp ? 'La empresa no tiene encargado: va a Aquiles, que lo deriva' : 'No se identificó la empresa: va a Aquiles, que lo deriva'; }
+  const dudas = [];
+  if (cat?.id === 'impuestos' && /\?/.test(m.asunto + m.cuerpo)) dudas.push('Parece una pregunta: ¿impuestos o consulta sobre impuestos?');
+  return { emp, cat, a, motivo, dudas };
+}
+function filaDeriv(m, d) {
+  return `<td><b>${esc(m.asunto)}</b><div class="small muted">${esc(m.de)}</div></td><td>${d.emp ? esc(d.emp.nombre) : '<span class="muted">No identificada</span>'}</td><td>${d.cat ? esc(d.cat.nombre) : '<span class="muted">Sin categoría</span>'}</td>
+    <td><b>${IA_EQUIPO[d.a].nombre}</b><div class="small muted">${esc(d.motivo)}</div>${d.dudas.map(x => `<span class="tag warn" style="white-space:normal">${esc(x)}</span>`).join('')}</td>`;
+}
+function vIaBandeja() {
+  const pr = S.iaPrueba;
+  return iaHead(5, 'Orden y distribución de correos', 'Cada correo que llega a contacto@vergarayvasquez.com se asigna a una empresa, se clasifica y se deriva: si es de una categoría de la lista va a esa persona, aunque la empresa tenga otro encargado; si no, al encargado de la empresa; y sin encargado, a Aquiles.') + `
+  <div class="sheet scroll"><h2>Bandeja de ejemplo</h2>
+    <table class="ledger"><thead><tr><th>Correo</th><th>Empresa</th><th>Categoría</th><th>Deriva a</th></tr></thead><tbody>
+    ${IA_BANDEJA.map(m => `<tr>${filaDeriv(m, iaDerivar(m))}</tr>`).join('')}</tbody></table>
+  </div>
+  <div class="grid2 block">
+    <div class="sheet"><h2>Prueba con un correo</h2>
+      <div class="stack" style="gap:12px">
+        <div class="field"><label for="iaPrDe">Remitente</label><input type="email" id="iaPrDe" value="${esc(pr?.m.de || 'pagos@pacifico.ejemplo.cl')}"></div>
+        <div class="field"><label for="iaPrAs">Asunto</label><input type="text" id="iaPrAs" value="${esc(pr?.m.asunto || '')}" placeholder="Ej.: Contrato de nuevo trabajador"></div>
+        <div class="field"><label for="iaPrCu">Contenido</label><textarea id="iaPrCu" placeholder="Escribe el texto del correo">${esc(pr?.m.cuerpo || '')}</textarea></div>
+        <button class="btn" data-a="ia-clasificar" style="align-self:flex-start">Clasificar</button>
+        ${pr ? `<table class="ledger"><thead><tr><th>Correo</th><th>Empresa</th><th>Categoría</th><th>Deriva a</th></tr></thead><tbody><tr>${filaDeriv(pr.m, pr.d)}</tr></tbody></table>` : ''}
+      </div>
+      <p class="small muted" style="margin:12px 0 0">En la demo se clasifica por palabras clave. En producción lo hace el modelo de IA con la misma tabla y deja anotado por qué eligió cada destino.</p>
+    </div>
+    <div class="sheet scroll"><h2>Tabla de derivación</h2>
+      <table class="ledger"><thead><tr><th>Categoría</th><th>Destino</th></tr></thead><tbody>
+      ${IA_CATEGORIAS.map(c => `<tr><td>${esc(c.nombre)}</td><td class="small">${esc(IA_EQUIPO[c.a].correo)}</td></tr>`).join('')}
+      <tr><td>Sin categoría ni encargado</td><td class="small">${IA_EQUIPO.aquiles.correo}, que lo deriva</td></tr></tbody></table>
+      <p class="small muted" style="margin:10px 0 0">Lista parcial: se agregan las demás categorías a medida que se definan. Gastronómica: lo contable a Yahel y lo demás a Aquiles.</p>
+    </div>
+  </div>`;
+}
+
+/* ---------- acciones ---------- */
+async function iaAccion(a, el) {
+  const F = () => IA.facturas.find(f => f.id === el.dataset.id);
+  switch (a) {
+    case 'ia-reiniciar': IA = iaSemilla(); S.iaSel = new Set(); S.iaPrueba = null; iaUfPedida = false; iaGuardar(); toast('Demo reiniciada'); render(); break;
+    case 'ia-uf': IA.uf = null; iaUfPedida = true; render(); await iaTraerUF(); render(); toast('UF actualizada'); break;
+    case 'ia-fact-emitir': {
+      const filas = iaFilasFact().filter(r => r.incluir && r.neto != null);
+      let folio = Math.max(...IA.facturas.map(f => f.folio));
+      const fecha = isoDia(new Date(hoyDia().getFullYear(), hoyDia().getMonth(), 5));
+      filas.forEach(r => IA.facturas.push({ id: uid('fac'), folio: ++folio, empresaId: r.e.id, fecha, neto: r.neto, iva: r.iva, total: r.neto + r.iva, envio: 'por_aprobar', estado: 'pendiente', fechaPago: null, cobros: [], creadaEnDemo: true }));
+      iaLog(1, filas.length + ' facturas emitidas (simulado) y guardadas en la base'); render(); toast(filas.length + ' facturas emitidas'); break;
+    }
+    case 'ia-fact-reset': { const per = iaPeriodo(); IA.facturas = IA.facturas.filter(f => !(f.creadaEnDemo && f.fecha.startsWith(per))); iaLog(1, 'Emisión del mes deshecha'); render(); break; }
+    case 'ia-ver-pdf': IA.ver = IA.ver === el.dataset.id ? null : el.dataset.id; render(); break;
+    case 'ia-fact-corregir': IA.corrigiendo = el.dataset.id || null; render(); break;
+    case 'ia-fact-guardar-corr': { const f = F(); const v = Math.round(+$('#iaCorrNeto').value); if (!(v > 0)) { toast('Escribe un monto válido'); break; } f.neto = v; f.iva = Math.round(v * IVA); f.total = v + f.iva; IA.corrigiendo = null; iaLog(1, 'Factura ' + f.folio + ' corregida: neto ' + pesos(v)); render(); break; }
+    case 'ia-fact-aprobar': { const f = F(); f.envio = 'enviada'; iaLog(1, 'Factura ' + f.folio + ' aprobada por ' + (S.sesion?.nombre || 'el equipo') + ' y enviada a ' + iaEmp(f.empresaId).nombre); render(); toast('Factura enviada (simulado)'); break; }
+    case 'ia-fact-aprobar-todas': { const fs = IA.facturas.filter(f => f.envio === 'por_aprobar' && iaEmp(f.empresaId).correos.length); fs.forEach(f => f.envio = 'enviada'); iaLog(1, fs.length + ' facturas aprobadas por ' + (S.sesion?.nombre || 'el equipo') + ' y enviadas'); render(); toast(fs.length + ' facturas enviadas (simulado)'); break; }
+    case 'ia-pagar': { const f = F(); f.estado = 'pagada'; f.fechaPago = isoDia(hoyDia()); S.iaSel?.delete(f.id); iaLog(2, 'Factura ' + f.folio + ' marcada como pagada'); render(); break; }
+    case 'ia-pago-registrar': {
+      const folio = +$('#iaPagoFolio').value; const f = IA.facturas.find(x => x.folio === folio && x.envio === 'enviada');
+      const mt = $('#iaPagoFecha').value.trim().match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+      if (!f) { toast('No hay una factura enviada con ese número'); break; }
+      if (!mt) { toast('Escribe la fecha como dd-mm-aaaa'); break; }
+      if (f.estado === 'pagada') { toast('La factura ' + folio + ' ya estaba pagada'); break; }
+      f.estado = 'pagada'; f.fechaPago = mt[3] + '-' + pad(+mt[2]) + '-' + pad(+mt[1]); S.iaSel?.delete(f.id);
+      iaLog(iaEmp(f.empresaId).rossel ? 7 : 2, 'Pago registrado: factura ' + folio + ' el ' + fechaCorta(deIso(f.fechaPago))); render(); toast('Factura ' + folio + ' marcada como pagada'); break;
+    }
+    case 'ia-cobro-preparar': IA.borradoresCobro = [...S.iaSel]; iaGuardar(); render(); document.querySelector('section.block')?.scrollIntoView({ behavior: 'smooth' }); break;
+    case 'ia-cobro-cancelar': IA.borradoresCobro = []; iaGuardar(); render(); break;
+    case 'ia-cobro-enviar': {
+      const fs = IA.borradoresCobro.map(id => IA.facturas.find(f => f.id === id)).filter(Boolean);
+      fs.forEach(f => f.cobros.push(isoDia(hoyDia()))); IA.borradoresCobro = []; S.iaSel = new Set();
+      iaLog(S.params.f === 'rossel' ? 7 : 2, (fs.length === 1 ? 'Correo de cobro enviado (simulado): factura ' : fs.length + ' correos de cobro enviados (simulado): facturas ') + fs.map(f => f.folio).join(', ')); render(); toast('Cobros enviados (simulado)'); break;
+    }
+    case 'ia-f29-enviar': {
+      const { per, grupos } = iaGruposF29(); const key = 'f29-' + isoDia(per).slice(0, 7);
+      const env = IA.enviados[key] = IA.enviados[key] || [];
+      const nuevos = grupos.filter(g => !g.faltan.length && g.mail.para.length && !env.includes(g.k));
+      nuevos.forEach(g => env.push(g.k)); iaLog(3, nuevos.length + ' correos de F29 y Previred enviados (simulado)'); render(); toast(nuevos.length + ' correos enviados (simulado)'); break;
+    }
+    case 'ia-rec-enviar': IA.enviados[el.dataset.k] = hoy(); iaLog(4, 'Recordatorio de ' + el.dataset.n + ' enviado a ' + el.dataset.c + ' empresas (simulado)'); render(); break;
+    case 'ia-clasificar': {
+      const m = { de: $('#iaPrDe').value.trim(), asunto: $('#iaPrAs').value.trim(), cuerpo: $('#iaPrCu').value.trim() };
+      if (!m.asunto && !m.cuerpo) { toast('Escribe el asunto o el contenido'); break; }
+      S.iaPrueba = { m, d: iaDerivar(m) }; iaLog(5, '"' + (m.asunto || m.cuerpo).slice(0, 40) + '" derivado a ' + IA_EQUIPO[S.iaPrueba.d.a].nombre); render(); break;
+    }
+  }
+}
+function iaCambio(t) {
+  if (t.dataset.iaIncluir) { IA.excluir[t.dataset.iaIncluir] = !t.checked; iaGuardar(); render(); return true; }
+  if (t.dataset.iaSel) { S.iaSel = S.iaSel || new Set(); t.checked ? S.iaSel.add(t.dataset.iaSel) : S.iaSel.delete(t.dataset.iaSel); render(); return true; }
+  if (t.dataset.iaMonto) { const v = Math.round(+t.value); const m = IA.montos[t.dataset.iaMonto] = IA.montos[t.dataset.iaMonto] || {}; if (v > 0) m[t.dataset.tipo] = v; else delete m[t.dataset.tipo]; iaGuardar(); render(); return true; }
+  if (t.id === 'iaUf') { const v = +t.value; if (v > 0) { IA.uf = v; IA.ufFuente = 'Valor escrito a mano'; iaGuardar(); render(); } return true; }
+  return false;
 }
 
 /* ============================ inicio ============================ */

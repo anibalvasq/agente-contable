@@ -1,0 +1,5 @@
+# Vercel publica solo el panel en modo demostración (sin servidor ni base).
+# Lista blanca: así nunca sube .env, data/ ni el código del backend.
+/*
+!/panel
+!/vercel.json
