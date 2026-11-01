@@ -123,6 +123,18 @@ const schema = z
      */
     MCP_TOKEN: opcional(z.string().min(24, 'MCP_TOKEN debe tener al menos 24 caracteres')),
 
+    /**
+     * Supabase Auth para el panel: usuarios con correo y clave, y rol (admin/equipo).
+     * SUPABASE_URL + SUPABASE_PUBLISHABLE_KEY activan el login; requieren STORE=postgres
+     * (la tabla `equipo` decide quién entra). La service key solo hace falta para
+     * CREAR cuentas; va solo en el servidor, nunca al navegador.
+     */
+    SUPABASE_URL: opcional(z.string().url()),
+    SUPABASE_PUBLISHABLE_KEY: opcional(z.string()),
+    SUPABASE_SERVICE_ROLE_KEY: opcional(z.string()),
+    /** 'require' = conexión cifrada a Postgres (Supabase la exige). Vacío = sin TLS (local). */
+    DATABASE_SSL: opcional(z.enum(['require'])),
+
     // ── LLM (OpenRouter) ──────────────────────────────────────
     // Cualquier API compatible con OpenAI. LLM_API_KEY y LLM_BASE_URL mandan; si
     // no están, se usan las OPENROUTER_* (el nombre original del kit).
@@ -153,6 +165,10 @@ const schema = z
   .refine((e) => Boolean(e.LLM_API_KEY ?? e.OPENROUTER_API_KEY), {
     message: 'Falta la API key del LLM (LLM_API_KEY, o OPENROUTER_API_KEY)',
     path: ['LLM_API_KEY'],
+  })
+  .refine((e) => !e.SUPABASE_URL || (Boolean(e.SUPABASE_PUBLISHABLE_KEY) && e.STORE === 'postgres'), {
+    message: 'SUPABASE_URL requiere SUPABASE_PUBLISHABLE_KEY y STORE=postgres',
+    path: ['SUPABASE_URL'],
   })
   .refine((e) => e.STORE !== 'postgres' || Boolean(e.DATABASE_URL), {
     message: 'STORE=postgres requiere DATABASE_URL',

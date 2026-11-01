@@ -4,6 +4,8 @@ import path from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { env } from '../env.js';
 import { hoyChile } from '../agent/tools/chile/calc.js';
+import { ErrorAuth, type Autenticador } from '../auth/supabase.js';
+import type { Miembro } from '../auth/equipo.js';
 import { cargarReglas, validarReglas } from '../correos/reglas.js';
 import { procesarCorreo, type ResolverIA } from '../correos/procesar.js';
 import type { Empresa } from '../empresas/empresas.js';
@@ -27,8 +29,17 @@ const MAX_LOTE = 3000;
 // Los ids los genera el panel (uid('cli') → "cli_lzx3k9ab1"). Nada de "/" ni "..".
 const ID_VALIDO = /^[a-z]{2,10}_[a-z0-9]{4,40}$/;
 
+declare module 'fastify' {
+  interface FastifyRequest {
+    /** Quién entró, cuando el panel usa Supabase Auth. */
+    miembro?: Miembro;
+  }
+}
+
 export interface PanelOptions {
   store: PanelStore;
+  /** Con Supabase Auth: usuarios reales con rol. Reemplaza a `clave`, que queda solo para desarrollo local. */
+  auth?: Autenticador;
   /** PANEL_PASSWORD. Sin ella: libre en desarrollo, apagado en producción. */
   clave: string | undefined;
   produccion: boolean;
@@ -49,9 +60,12 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
   const { store, clave, produccion } = opts;
   // Un panel con los datos contables de los clientes abierto en internet sin
   // clave es peor que no tener panel. En local da igual: solo lo ves tú.
-  const habilitado = Boolean(clave) || !produccion;
-  if (!habilitado) logger.warn('panel deshabilitado: falta PANEL_PASSWORD en producción');
-  else {
+  const { auth } = opts;
+  // Con Supabase Auth el panel siempre está habilitado: la puerta son las cuentas, no una clave compartida.
+  const habilitado = Boolean(auth) || Boolean(clave) || !produccion;
+  if (auth) logger.info('panel con Supabase Auth: acceso solo para miembros activos de la tabla equipo');
+  else if (!habilitado) logger.warn('panel deshabilitado: falta PANEL_PASSWORD en producción');
+  else if (habilitado) {
     logger.info(`panel del estudio → http://localhost:${env.PORT}/panel`);
     if (!clave) logger.warn('panel SIN clave (solo desarrollo). Define PANEL_PASSWORD antes de desplegar');
   }
@@ -65,10 +79,32 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
   // La raíz abre el panel: es lo que el equipo usa a diario.
   app.get('/', (_req, reply) => reply.redirect('/panel'));
 
-  app.get('/panel/api/estado', async () => ({ habilitado, requiereClave: Boolean(clave) }));
+  app.get('/panel/api/estado', async () => ({
+    habilitado,
+    requiereClave: !auth && Boolean(clave),
+    // Lo que necesita el navegador para iniciar sesión en Supabase: URL y clave PÚBLICA.
+    ...(auth ? { auth: 'supabase', supabase: auth.config } : {}),
+  }));
 
   async function autorizar(req: FastifyRequest, reply: FastifyReply): Promise<void> {
     if (!habilitado) return reply.code(503).send({ error: 'panel deshabilitado' });
+    if (auth) {
+      const h = req.headers.authorization ?? '';
+      const token = h.startsWith('Bearer ') ? h.slice(7) : '';
+      if (!token) return reply.code(401).send({ error: 'sesión requerida' });
+      let v;
+      try {
+        v = await auth.verificar(token);
+      } catch (err) {
+        // Supabase caído: 503 y no 401, para que el panel no cierre la sesión de todo el equipo.
+        logger.error({ err }, 'no se pudo validar la sesión con Supabase');
+        return reply.code(503).send({ error: 'no se pudo validar la sesión' });
+      }
+      if (v.estado === 'invalido') return reply.code(401).send({ error: 'sesión inválida o vencida' });
+      if (v.estado === 'sin_acceso') return reply.code(403).send({ error: 'sin_acceso' });
+      req.miembro = v.miembro;
+      return;
+    }
     if (!clave) return;
     const h = req.headers.authorization ?? '';
     const enviada = h.startsWith('Bearer ') ? h.slice(7) : '';
@@ -77,7 +113,64 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
 
   // El login no emite nada: solo le dice al navegador si la clave sirve, para
   // dar el error en la pantalla de ingreso y no a mitad de un guardado.
-  app.post('/panel/api/login', { preHandler: autorizar }, async () => ({ ok: true }));
+  app.post('/panel/api/login', { preHandler: autorizar }, async (req) => ({ ok: true, miembro: req.miembro ?? null }));
+  app.get('/panel/api/yo', { preHandler: autorizar }, async (req) => ({ miembro: req.miembro ?? null }));
+
+  // ── Equipo: crear y administrar quién entra (solo rol admin, solo con Supabase Auth). ──
+  if (auth) {
+    const soloAdmin = async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
+      await autorizar(req, reply);
+      if (reply.sent) return;
+      if (req.miembro?.rol !== 'admin') return reply.code(403).send({ error: 'solo un administrador puede hacer esto' });
+    };
+
+    app.get('/panel/api/equipo', { preHandler: soloAdmin }, async () => ({ equipo: await auth.equipo.list() }));
+
+    app.post<{ Body: { email?: unknown; nombre?: unknown; rol?: unknown; password?: unknown } }>(
+      '/panel/api/equipo',
+      { preHandler: soloAdmin, bodyLimit: 4 * 1024 },
+      async (req, reply) => {
+        const { email, nombre, rol, password } = req.body ?? {};
+        if (typeof email !== 'string' || typeof nombre !== 'string' || typeof password !== 'string' || (rol !== 'admin' && rol !== 'equipo')) {
+          return reply.code(400).send({ error: 'se esperan email, nombre, rol (admin o equipo) y password' });
+        }
+        try {
+          const m = await auth.crear({ email, nombre, rol, password });
+          // Se registra QUIÉN creó la cuenta, sin la clave.
+          logger.info({ por: req.miembro?.email, creada: m.email, rol: m.rol }, 'cuenta del estudio creada');
+          return reply.code(201).send({ miembro: m });
+        } catch (err) {
+          if (err instanceof ErrorAuth) {
+            const status = err.codigo === 'correo_ya_registrado' ? 409 : err.codigo === 'sin_service_key' ? 503 : err.codigo === 'supabase_fallo' ? 502 : 400;
+            return reply.code(status).send({ error: err.message, codigo: err.codigo });
+          }
+          logger.error({ err }, 'no se pudo crear la cuenta');
+          return reply.code(500).send({ error: 'no se pudo crear la cuenta' });
+        }
+      },
+    );
+
+    app.patch<{ Params: { id: string }; Body: { rol?: unknown; activo?: unknown } }>(
+      '/panel/api/equipo/:id',
+      { preHandler: soloAdmin, bodyLimit: 1024 },
+      async (req, reply) => {
+        const { id } = req.params;
+        const { rol, activo } = req.body ?? {};
+        if ((rol !== undefined && rol !== 'admin' && rol !== 'equipo') || (activo !== undefined && typeof activo !== 'boolean')) {
+          return reply.code(400).send({ error: 'rol o activo inválidos' });
+        }
+        // Nadie se quita su propio acceso de administrador: si el único admin se desactivara,
+        // nadie podría volver a entrar a administrar al equipo.
+        if (id === req.miembro?.userId && (activo === false || rol === 'equipo')) {
+          return reply.code(400).send({ error: 'no puedes quitarte tu propio acceso de administrador' });
+        }
+        if (!(await auth.equipo.get(id))) return reply.code(404).send({ error: 'no existe esa persona' });
+        await auth.equipo.update(id, { ...(rol ? { rol } : {}), ...(activo !== undefined ? { activo } : {}) });
+        auth.olvidar(id);
+        return reply.code(204).send();
+      },
+    );
+  }
 
   app.get<{ Params: { col: string } }>('/panel/api/docs/:col', { preHandler: autorizar }, async (req, reply) => {
     if (!COLECCIONES.has(req.params.col)) return reply.code(404).send({ error: 'colección desconocida' });

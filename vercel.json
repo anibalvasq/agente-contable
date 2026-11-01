@@ -1,9 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "echo 'sin dependencias: se publica solo el panel'",
-  "buildCommand": "echo 'sin build: se publica panel/ tal cual'",
-  "outputDirectory": "panel",
+  "installCommand": "npm ci --ignore-scripts",
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "{panel,config}/**",
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
   "headers": [
     { "source": "/(.*)", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] }
   ]

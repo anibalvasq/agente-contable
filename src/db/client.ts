@@ -12,7 +12,12 @@ if (!env.DATABASE_URL) {
 
 export const pool = new Pool({
   connectionString: env.DATABASE_URL,
-  max: 10,
+  // En serverless (Vercel) cada instancia abre su propio pool: con 10 conexiones por instancia
+  // se agota el pooler de Supabase en un pico. Una por instancia basta.
+  max: process.env.VERCEL ? 1 : 10,
+  // Supabase exige TLS. Sin verificar la cadena: su pooler firma con una CA propia que no está
+  // en el almacén del sistema. Va cifrado igual; lo que se pierde es detectar un servidor falso.
+  ...(env.DATABASE_SSL ? { ssl: { rejectUnauthorized: false } } : {}),
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 10_000,
 });

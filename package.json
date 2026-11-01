@@ -17,6 +17,7 @@
     "claves:importar": "tsx scripts/importar-claves.ts",
     "empresas:importar": "tsx scripts/importar-empresas.ts",
     "recordatorios": "tsx scripts/recordatorios.ts",
+    "usuarios:crear-admin": "tsx scripts/crear-admin.ts",
     "typecheck": "tsc --noEmit",
     "deploy": "tsx scripts/deploy-coolify.ts",
     "redeploy": "tsx scripts/redeploy-coolify.ts",

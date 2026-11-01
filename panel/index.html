@@ -363,8 +363,9 @@ body:not(.logged-out) #loginScreen{display:none}
     <p id="demoNote" class="note" hidden>Versión de demostración con datos ficticios. Escribe cualquier nombre para entrar: no se pide clave y nada se envía.</p>
     <p id="panelOff" class="note err" hidden>El panel está deshabilitado en este servidor: falta definir PANEL_PASSWORD.</p>
     <div class="stack">
-      <div class="field"><label for="loginNombre">Nombre completo</label><input type="text" id="loginNombre" autocomplete="name" placeholder="Ej.: Gonzalo Vergara"></div>
+      <div class="field" id="nombreField"><label for="loginNombre">Nombre completo</label><input type="text" id="loginNombre" autocomplete="name" placeholder="Ej.: Gonzalo Vergara"></div>
       <div class="field"><label for="loginCorreo">Correo</label><input type="email" id="loginCorreo" autocomplete="email" placeholder="nombre@vergarayvasquez.cl"></div>
+      <div class="field" id="passField" hidden><label for="loginPass">Contraseña</label><input type="password" id="loginPass" autocomplete="current-password"><span class="hint">¿No tienes cuenta o olvidaste la contraseña? Pídesela a un administrador del estudio.</span></div>
       <div class="field" id="claveField" hidden><label for="loginClave">Clave del panel</label><input type="password" id="loginClave" autocomplete="current-password"><span class="hint">La entrega quien administra el servidor.</span></div>
       <button class="btn" data-a="iniciar-sesion">Ingresar</button>
     </div>
@@ -456,7 +457,7 @@ function renderChrome() {
   document.body.classList.toggle('logged-out', !S.sesion);
   // El rol sale del mantenedor de usuarios, por el correo con que se ingresó.
   const u = S.sesion?.correo ? S.usuarios.find(x => x.activo !== false && norm(x.correo) === norm(S.sesion.correo)) : null;
-  const sb = $('#sesionBox'); if (sb) sb.innerHTML = S.sesion ? `<b>${esc(S.sesion.nombre)}</b>${u ? esc(u.rol) + ' · ' : S.sesion.correo ? esc(S.sesion.correo) + ' · ' : ''}<button class="link small" data-a="cerrar-sesion">Cerrar sesión</button>` : '';
+  const sb = $('#sesionBox'); if (sb) sb.innerHTML = S.sesion ? `<b>${esc(S.sesion.nombre)}</b>${S.yo ? esc(S.yo.rol) + ' · ' : u ? esc(u.rol) + ' · ' : S.sesion.correo ? esc(S.sesion.correo) + ' · ' : ''}<button class="link small" data-a="cerrar-sesion">Cerrar sesión</button>` : '';
   const tb = $('#themeBtn'); if (tb) tb.textContent = { auto: 'Tema: automático', light: 'Tema: claro', dark: 'Tema: oscuro' }[S.tema] || 'Tema: claro';
 }
 
@@ -515,13 +516,33 @@ function editingNow() { const a = document.activeElement; return a && (($('#view
 // descargas y el modelo. Aquí los reemplaza el servidor del kit (/panel/api),
 // con la misma forma (doc().set, collection().onSnapshot) para no tocar el resto.
 const API = '/panel/api';
-const PANEL = { habilitado: true, requiereClave: false };
+const PANEL = { habilitado: true, requiereClave: false, auth: null, supabase: null };
 let generacion = 0; // sube al cerrar sesión: corta los sondeos de la sesión anterior
+// Sesión con Supabase Auth: el navegador inicia sesión DIRECTO en Supabase (correo + contraseña) y
+// el servidor solo recibe el token. La contraseña nunca pasa por nuestro servidor.
+const TOK_KEY = 'ac_tok';
+function leerTok() { try { return JSON.parse(lsGet(TOK_KEY)) || null; } catch (e) { return null; } }
+function guardarTok(r) { const t = { access: r.access_token, refresh: r.refresh_token, exp: Date.now() + Math.max(30, (r.expires_in || 3600) - 30) * 1000 }; lsSet(TOK_KEY, JSON.stringify(t)); return t; }
+async function sbAuth(ruta, { method = 'POST', body, token } = {}) {
+  const r = await fetch(PANEL.supabase.url + '/auth/v1' + ruta, { method, headers: { apikey: PANEL.supabase.publishableKey, 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(j.error_description || j.msg || 'error'); e.status = r.status; throw e; }
+  return j;
+}
+let refrescando = null; // un solo refresco a la vez: las respuestas del sondeo llegan juntas
+async function tokenVigente() {
+  const t = leerTok(); if (!t) return null;
+  if (t.exp > Date.now()) return t.access;
+  refrescando ??= sbAuth('/token?grant_type=refresh_token', { body: { refresh_token: t.refresh } }).then(guardarTok).finally(() => { refrescando = null; });
+  try { return (await refrescando).access; } catch (e) { lsDel(TOK_KEY); return null; }
+}
 async function api(ruta, opts = {}) {
   const headers = opts.body ? { 'Content-Type': 'application/json' } : {};
   const k = lsGet('ac_clave'); if (k) headers.Authorization = 'Bearer ' + k;
+  if (PANEL.auth === 'supabase') { const t = await tokenVigente(); if (t) headers.Authorization = 'Bearer ' + t; }
   const r = await fetch(API + ruta, { ...opts, headers });
-  if (r.status === 401) { salir(); toast('La clave del panel no es válida o cambió'); }
+  if (r.status === 401) { salir(); toast(PANEL.auth === 'supabase' ? 'Tu sesión venció: ingresa de nuevo' : 'La clave del panel no es válida o cambió'); }
+  if (r.status === 403 && PANEL.auth === 'supabase') { salir(); toast('Tu cuenta no tiene acceso al panel del estudio'); }
   if (!r.ok) { const e = new Error('http ' + r.status); e.code = r.status === 401 ? 'unauthorized' : 'http_' + r.status; throw e; }
   return r.status === 204 ? null : r.json();
 }
@@ -560,7 +581,8 @@ const DL_LOCAL = { async save({ filename, data }) {
 function salir() {
   generacion++; DB = null; SAMPLE = null;
   S.sesion = null; S.clientes = []; S.lotes = []; S.cuentas = []; S.centros = []; S.usuarios = []; S.rt = {}; S.chat = []; S.view = 'panel'; S.params = {};
-  lsDel('ac_sesion'); lsDel('ac_clave'); render();
+  S.yo = null; S.equipo = undefined;
+  lsDel('ac_sesion'); lsDel('ac_clave'); lsDel(TOK_KEY); render();
 }
 // Modo demostración: el mismo HTML publicado como sitio estático (Vercel), sin
 // el servidor del kit detrás. Se activa solo si la API responde 404 (no existe):
@@ -582,6 +604,13 @@ async function cargarEstado() {
   } catch (e) { if (location.protocol === 'file:') activarDemo(); else setSync(false, 'Sin conexión al servidor'); }
   const cf = $('#claveField'); if (cf) cf.hidden = !PANEL.requiereClave;
   const off = $('#panelOff'); if (off) off.hidden = PANEL.habilitado;
+  if (PANEL.auth === 'supabase') {
+    // Con cuentas reales no se pide "nombre": sale de la cuenta.
+    $('#nombreField').hidden = true; $('#claveField').hidden = true; $('#passField').hidden = false;
+    $('#loginCorreo').placeholder = 'tu correo del estudio';
+    // Una sesión guardada de antes se confirma con el servidor (y trae el rol).
+    if (S.sesion) { try { S.yo = (await api('/yo')).miembro; render(); } catch (e) { /* api() ya cerró la sesión si correspondía */ } }
+  }
 }
 
 async function initRuntime() {
@@ -1100,7 +1129,7 @@ const NAV = [
   ['ia', 'Procesos IA', [['ia-mapa', 'Mapa de procesos'], ['ia-fact', '1 · Facturación'], ['ia-cobro', '2 y 7 · Cobranza'], ['ia-f29', '3 · F29 y Previred'], ['ia-recordatorios', '4 · Recordatorios'], ['ia-bandeja', '5 · Correos entrantes']]],
   ['operacion', 'Operación', [['lotes', 'Lotes de comprobantes'], ['nuevo', 'Nuevo lote'], ['carga', 'Carga Defontana']]],
   ['procesos', 'Procesos', [['procesos', 'Procesos por cliente'], ['correos', 'Correos tributarios']]],
-  ['mant', 'Mantenedores', [['clientes', 'Clientes'], ['cuentas', 'Plan de cuentas'], ['centros', 'Centros de costo'], ['reglas', 'Reglas de validación'], ['usuarios', 'Usuarios']]]
+  ['mant', 'Mantenedores', [['clientes', 'Clientes'], ['cuentas', 'Plan de cuentas'], ['centros', 'Centros de costo'], ['reglas', 'Reglas de validación'], ['usuarios', 'Usuarios'], ['equipo', 'Accesos al panel']]]
 ];
 // Íconos de trazo (24x24) para el menú y las tarjetas del panel.
 const ICO_PATHS = {
@@ -1114,6 +1143,7 @@ const ICO_PATHS = {
   cuentas: '<path d="M5 3h11l3 3v15H5z"/><path d="M9 9h6M9 13h6M9 17h4"/>',
   centros: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',
   reglas: '<path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  equipo: '<rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
   usuarios: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/>',
   alerta: '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17.5v.5"/>',
   'ia-mapa': '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
@@ -1132,7 +1162,7 @@ function renderNav() {
   $('#nav').innerHTML = NAV.map(([g, t, items]) => {
     const abierto = !S.navCerrado[g];
     return `<div class="grp"><button class="grp-h" data-a="nav-grp" data-g="${g}" aria-expanded="${abierto}"><span>${t}</span><span class="chev" aria-hidden="true">${abierto ? '▾' : '▸'}</span></button>
-      <div class="grp-i" ${abierto ? '' : 'hidden'}>${items.map(([v, tt]) => `<button data-a="go" data-v="${v}" ${cur === v ? 'aria-current="page"' : ''}><span>${ico(v)}<span>${tt}</span></span><span class="count">${cnt[v] || ''}</span></button>`).join('')}</div></div>`;
+      <div class="grp-i" ${abierto ? '' : 'hidden'}>${items.filter(([v]) => v !== 'equipo' || S.yo?.rol === 'admin').map(([v, tt]) => `<button data-a="go" data-v="${v}" ${cur === v ? 'aria-current="page"' : ''}><span>${ico(v)}<span>${tt}</span></span><span class="count">${cnt[v] || ''}</span></button>`).join('')}</div></div>`;
   }).join('');
 }
 function render() {
@@ -1141,7 +1171,7 @@ function render() {
   const V = {
     panel: vPanel, lotes: vLotes, lote: vLote, nuevo: vNuevo, carga: vCarga,
     procesos: vProcesos, correos: vCorreos, 'nuevo-proceso': vNuevoProceso, proceso: vProceso,
-    clientes: vClientes, cliente: vCliente, cuentas: () => vMant('cuentas'), centros: () => vMant('centros'), usuarios: () => vMant('usuarios'),
+    equipo: vEquipo, clientes: vClientes, cliente: vCliente, cuentas: () => vMant('cuentas'), centros: () => vMant('centros'), usuarios: () => vMant('usuarios'),
     reglas: vReglas, 'mant-form': vMantForm, 'mant-import': vMantImport,
     'ia-mapa': vIaMapa, 'ia-fact': vIaFact, 'ia-cobro': vIaCobro, 'ia-f29': vIaF29, 'ia-recordatorios': vIaRecordatorios, 'ia-bandeja': vIaBandeja
   }[S.view] || vPanel;
@@ -1216,6 +1246,46 @@ function mantCliente() {
   return (clientesActivos()[0] || S.clientes[0])?.id || '';
 }
 
+async function cargarEquipo() {
+  S.equipo = null;
+  try { S.equipo = (await api('/equipo')).equipo; } catch (e) { S.equipo = []; toast('No se pudo cargar el equipo'); }
+  render();
+}
+function vEquipo() {
+  if (S.yo?.rol !== 'admin') return `<div class="empty"><h2>Solo para administradores</h2><p>Pídele a un administrador del estudio que gestione los accesos.</p></div>`;
+  if (S.equipo === undefined) cargarEquipo();
+  const filas = (S.equipo || []).map(m => {
+    const yo = m.userId === S.yo.userId;
+    return `<tr><td><b>${esc(m.nombre)}</b>${yo ? ' <span class="muted small">(tú)</span>' : ''}<div class="small muted">${esc(m.email)}</div></td>
+      <td>${m.rol === 'admin' ? '<span class="tag">Administrador</span>' : '<span class="tag neutral">Equipo</span>'}</td>
+      <td>${m.activo ? '<span class="tag ok">Activo</span>' : '<span class="tag err">Sin acceso</span>'}</td>
+      <td class="num">${yo ? '' : `<button class="btn ghost sm" data-a="equipo-cambiar" data-id="${esc(m.userId)}" data-rol="${m.rol === 'admin' ? 'equipo' : 'admin'}">${m.rol === 'admin' ? 'Quitar admin' : 'Hacer admin'}</button>
+        <button class="btn ghost sm" data-a="equipo-cambiar" data-id="${esc(m.userId)}" data-activo="${m.activo ? '0' : '1'}">${m.activo ? 'Quitar acceso' : 'Dar acceso'}</button>`}</td></tr>`;
+  }).join('');
+  return `<div class="head"><div><p class="muted crumb">Mantenedores</p><h1>Accesos al panel</h1><p class="lede">Quién del estudio puede entrar. Quitar el acceso corta la sesión de esa persona en menos de un minuto.</p></div></div>
+  <div class="grid2">
+    <div class="sheet scroll"><h2>Equipo</h2>
+      ${S.equipo === null || S.equipo === undefined ? '<p class="muted">Cargando…</p>' : S.equipo.length ? `<table class="ledger"><thead><tr><th>Persona</th><th>Rol</th><th>Estado</th><th></th></tr></thead><tbody>${filas}</tbody></table>` : '<p class="muted">Todavía no hay cuentas.</p>'}
+    </div>
+    <div class="stack">
+      <div class="sheet"><h2>Crear una cuenta</h2>
+        <div class="stack" style="gap:12px">
+          <div class="field"><label for="eqNombre">Nombre completo</label><input type="text" id="eqNombre" autocomplete="off"></div>
+          <div class="field"><label for="eqCorreo">Correo</label><input type="email" id="eqCorreo" autocomplete="off"></div>
+          <div class="field"><label for="eqRol">Rol</label><select id="eqRol"><option value="equipo">Equipo</option><option value="admin">Administrador</option></select></div>
+          <div class="field"><label for="eqClave">Clave inicial</label><input type="password" id="eqClave" autocomplete="new-password"><span class="hint">Mínimo 10 caracteres. Entrégala por un canal seguro; la persona puede cambiarla al ingresar.</span></div>
+          <button class="btn" data-a="equipo-crear" style="align-self:flex-start">Crear cuenta</button>
+        </div>
+      </div>
+      <div class="sheet"><h2>Cambiar mi contraseña</h2>
+        <div class="stack" style="gap:12px">
+          <div class="field"><label for="nuevaClave">Nueva contraseña</label><input type="password" id="nuevaClave" autocomplete="new-password"><span class="hint">Mínimo 10 caracteres.</span></div>
+          <button class="btn ghost" data-a="cambiar-clave" style="align-self:flex-start">Cambiar contraseña</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
 function vMant(key) {
   const cfg = MANT[key];
   const cid = cfg.porCliente ? mantCliente() : '';
@@ -2027,6 +2097,17 @@ document.addEventListener('click', async e => {
     case 'clear-chat': S.chat = []; render(); break;
     case 'aw-toggle': S.assistantOpen = !S.assistantOpen; render(); if (S.assistantOpen) $('#chatIn')?.focus(); break;
     case 'iniciar-sesion': {
+      if (PANEL.auth === 'supabase') {
+        const correo = $('#loginCorreo').value.trim(), pass = $('#loginPass').value;
+        if (!correo || !pass) { toast('Escribe tu correo y tu contraseña'); break; }
+        try { guardarTok(await sbAuth('/token?grant_type=password', { body: { email: correo, password: pass } })); }
+        catch (err) { toast(err.status === 400 ? 'Correo o contraseña incorrectos' : 'No se pudo conectar con el servicio de cuentas'); break; }
+        try { S.yo = (await api('/yo')).miembro; }
+        catch (err) { lsDel(TOK_KEY); if (!['unauthorized', 'http_403'].includes(err.code)) toast('No se pudo conectar con el servidor'); break; }
+        $('#loginPass').value = '';
+        S.sesion = { nombre: S.yo.nombre, correo: S.yo.email };
+        lsSet('ac_sesion', JSON.stringify(S.sesion)); render(); initRuntime(); break;
+      }
       const nombre = $('#loginNombre').value.trim(); if (!nombre) { toast('Escribe tu nombre'); $('#loginNombre').focus(); break; }
       if (PANEL.requiereClave) {
         const clave = $('#loginClave').value;
@@ -2039,6 +2120,26 @@ document.addEventListener('click', async e => {
       lsSet('ac_sesion', JSON.stringify(S.sesion)); render(); initRuntime(); break;
     }
     case 'cerrar-sesion': salir(); break;
+    case 'equipo-crear': {
+      const body = { nombre: $('#eqNombre').value.trim(), email: $('#eqCorreo').value.trim(), rol: $('#eqRol').value, password: $('#eqClave').value };
+      if (!body.nombre || !body.email || !body.password) { toast('Completa nombre, correo y clave inicial'); break; }
+      try { await api('/equipo', { method: 'POST', body: JSON.stringify(body) }); toast('Cuenta creada. Entrega la clave inicial por un canal seguro'); await cargarEquipo(); }
+      catch (err) { toast(err.code === 'http_409' ? 'Ese correo ya tiene una cuenta en el proyecto: usa otro' : err.code === 'http_400' ? 'Revisa los datos: la clave debe tener al menos 10 caracteres' : 'No se pudo crear la cuenta'); }
+      break;
+    }
+    case 'equipo-cambiar': {
+      const cambio = el.dataset.rol ? { rol: el.dataset.rol } : { activo: el.dataset.activo === '1' };
+      try { await api('/equipo/' + encodeURIComponent(el.dataset.id), { method: 'PATCH', body: JSON.stringify(cambio) }); toast('Cambio guardado'); await cargarEquipo(); }
+      catch (err) { toast(err.code === 'http_400' ? 'No puedes quitarte tu propio acceso de administrador' : 'No se pudo guardar el cambio'); }
+      break;
+    }
+    case 'cambiar-clave': {
+      const nueva = $('#nuevaClave').value;
+      if (nueva.length < 10) { toast('La clave debe tener al menos 10 caracteres'); break; }
+      try { await sbAuth('/user', { method: 'PUT', body: { password: nueva }, token: await tokenVigente() }); $('#nuevaClave').value = ''; toast('Contraseña actualizada'); }
+      catch (err) { toast('No se pudo cambiar la contraseña'); }
+      break;
+    }
     default: if (a.startsWith('ia-')) await iaAccion(a, el); break;
     case 'toggle-tema': { S.tema = { light: 'dark', dark: 'auto', auto: 'light' }[S.tema] || 'light'; lsSet('ac_tema', S.tema); aplicarTema(); renderChrome(); break; }
   }
