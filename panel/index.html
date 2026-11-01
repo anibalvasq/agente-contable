@@ -599,7 +599,12 @@ function activarDemo() {
 async function cargarEstado() {
   try {
     const r = await fetch(API + '/estado');
-    if (r.status === 404) activarDemo();
+    if (r.status === 404) {
+      // La demo deja entrar con cualquier nombre. Solo se activa si se pide a propósito (?demo):
+      // si el servidor real no responde, entrar "en demo" parecería un panel sin contraseña.
+      if (new URLSearchParams(location.search).has('demo')) activarDemo();
+      else { PANEL.habilitado = false; const off = $('#panelOff'); if (off) off.textContent = 'No se pudo contactar al servidor del estudio (la ruta respondió 404). Avisa a quien administra el sistema.'; setSync(false, 'Sin conexión al servidor'); }
+    }
     else Object.assign(PANEL, await r.json());
   } catch (e) { if (location.protocol === 'file:') activarDemo(); else setSync(false, 'Sin conexión al servidor'); }
   const cf = $('#claveField'); if (cf) cf.hidden = !PANEL.requiereClave;
