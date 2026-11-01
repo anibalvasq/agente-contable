@@ -193,6 +193,9 @@ const parsed = schema.safeParse(process.env);
 if (!parsed.success) {
   const detalle = parsed.error.issues.map((i) => `  - ${i.path.join('.')}: ${i.message}`).join('\n');
   console.error(`Configuración inválida. Revisa tu .env:\n${detalle}`);
+  // En Vercel no se mata el proceso: se lanza el error para que api/index.ts lo capture y
+  // diga qué variable falla (en vez de un 500 mudo "FUNCTION_INVOCATION_FAILED").
+  if (process.env.VERCEL) throw new Error(`Configuración inválida:\n${detalle}`);
   process.exit(1);
 }
 
