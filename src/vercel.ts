@@ -40,8 +40,14 @@ export async function buildPanelApp(): Promise<FastifyInstance> {
         checks.equipo_miembros = r.rows[0]?.n ?? '?';
       } catch (err) {
         ok = false;
-        // El mensaje del driver (p. ej. "password authentication failed") solo fuera de producción.
-        checks.postgres = process.env.VERCEL_ENV === 'production' ? 'error' : err instanceof Error ? err.message : 'error';
+        // La categoría (y qué arreglar) se muestra siempre: no revela host, usuario ni contraseña.
+        // El mensaje crudo del driver, solo fuera de producción.
+        const { motivoErrorDb } = await import('./db/diagnostico.js');
+        const d = motivoErrorDb(err);
+        checks.postgres = 'error';
+        checks.motivo = d.motivo;
+        checks.ayuda = d.ayuda;
+        if (process.env.VERCEL_ENV !== 'production') checks.detalle = err instanceof Error ? err.message : String(err);
       }
     }
     checks.supabase_auth = auth ? 'configurado' : 'sin configurar';
