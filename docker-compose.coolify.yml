@@ -56,6 +56,8 @@ services:
       - PANEL_PASSWORD=${PANEL_PASSWORD:-}
       # Llave que cifra las claves de las empresas (src/security/vault.ts).
       - CREDENTIALS_KEY=${CREDENTIALS_KEY:-}
+      # Token del servidor MCP (/mcp). Vacío = apagado.
+      - MCP_TOKEN=${MCP_TOKEN:-}
       # LLM. OpenRouter por defecto; para Anthropic u OpenAI directo, define
       # LLM_API_KEY y LLM_BASE_URL (mandan sobre OPENROUTER_*).
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}

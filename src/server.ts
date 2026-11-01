@@ -7,6 +7,7 @@ import { makeChannelContext } from './channels/ingest.js';
 import type { ChannelAdapter } from './channels/types.js';
 import type { ConversationStore } from './memory/store.js';
 import { resolverConLlm } from './correos/procesar.js';
+import { registerMcp } from './mcp/server.js';
 import { registerPanel } from './panel/routes.js';
 import { createPanelStore } from './panel/store.js';
 
@@ -86,8 +87,10 @@ export async function buildServer(store: ConversationStore, adapter: ChannelAdap
     return reply.code(ok ? 200 : 503).send({ ok, checks });
   });
 
+  const panelStore = await createPanelStore();
+  await registerMcp(app, { store: panelStore, token: env.MCP_TOKEN });
   await registerPanel(app, {
-    store: await createPanelStore(),
+    store: panelStore,
     clave: env.PANEL_PASSWORD,
     produccion: env.NODE_ENV === 'production',
     resolverCorreo: resolverConLlm(),

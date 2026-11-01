@@ -117,6 +117,12 @@ const schema = z
      */
     CREDENTIALS_KEY: opcional(z.string()),
 
+    /**
+     * Token con que el cliente conecta SU Claude al servidor MCP (/mcp). Sin él,
+     * /mcp queda apagado. Mínimo 24 caracteres; genera uno con: openssl rand -hex 32
+     */
+    MCP_TOKEN: opcional(z.string().min(24, 'MCP_TOKEN debe tener al menos 24 caracteres')),
+
     // ── LLM (OpenRouter) ──────────────────────────────────────
     // Cualquier API compatible con OpenAI. LLM_API_KEY y LLM_BASE_URL mandan; si
     // no están, se usan las OPENROUTER_* (el nombre original del kit).
