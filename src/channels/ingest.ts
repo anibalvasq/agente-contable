@@ -81,37 +81,6 @@ export function makeChannelContext(
     store,
     config,
 
-    async enqueue(message: NormalizedMessage): Promise<void> {
-      if (!message.isInbound) return;
-
-      const text = clean(message.text);
-      if (!text) return;
-
-      if (!(await withinRate(message.externalContactId))) return;
-
-      const eventId = message.externalMessageId ?? synthEventId(message.externalContactId, text);
-      const fresh = await store.markEventSeen(providerName, eventId, {
-        externalContactId: message.externalContactId,
-        externalConversationId: message.externalConversationId ?? null,
-        metadata: message.metadata ?? {},
-      });
-      if (!fresh) return; // reintento del proveedor
-
-      const contact = await store.upsertContact({
-        externalId: message.externalContactId,
-        phone: message.phone,
-        name: message.name,
-        email: message.email,
-        metadata: message.metadata,
-      });
-      const conversation = await store.getOrCreateConversation(contact.id, message.externalConversationId ?? null);
-      if (!conversation.agentEnabled) return; // un humano tomó la charla
-
-      // Import dinámico: así los canales inline (web) nunca cargan Redis.
-      const { enqueueMessage } = await import('../queue/buffer.js');
-      await enqueueMessage(conversation.id, contact.id, text);
-    },
-
     async runInline(message: NormalizedMessage): Promise<string | null> {
       const text = clean(message.text);
       if (!text) return null;

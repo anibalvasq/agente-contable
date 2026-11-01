@@ -51,7 +51,7 @@ const schema = z
     REDIS_URL: conDefault(z.string().url(), 'redis://localhost:6379'),
 
     // Qué frontend está activo. Ver src/channels/registry.ts.
-    CHANNEL_ADAPTER: z.enum(['web', 'telegram', 'cloud-api', 'ghl', 'chatwoot', 'ycloud']).default('web'),
+    CHANNEL_ADAPTER: z.enum(['telegram']).default('telegram'),
 
     // Secreto compartido para validar webhooks (los canales que lo usan).
     WEBHOOK_SECRET: opcional(z.string()),
@@ -150,7 +150,7 @@ const schema = z
     // 400 ("deprecated for this model"). Vacía, no se manda y decide el modelo.
     LLM_TEMPERATURE: opcional(z.coerce.number().min(0).max(2)),
     APP_URL: z.string().default(''),
-    APP_TITLE: z.string().default('wa-agent-starter'),
+    APP_TITLE: z.string().default('agente-contable'),
 
     // ── Agente ────────────────────────────────────────────────
     AGENT_CONFIG_PATH: conDefault(z.string(), 'config/agent.yaml'),

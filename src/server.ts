@@ -18,7 +18,7 @@ export type RequestWithRawBody = FastifyRequest & { rawBody?: Buffer };
 export async function buildServer(store: ConversationStore, adapter: ChannelAdapter): Promise<FastifyInstance> {
   const app = Fastify({
     loggerInstance: logger as FastifyBaseLogger,
-    // El proxy de Coolify termina TLS; sin esto request.ip sería el del proxy.
+    // Detrás de un proxy (Vercel) la IP real viene en X-Forwarded-For; sin esto request.ip sería la del proxy.
     trustProxy: true,
     // 256 KB alcanza de sobra para un webhook de mensajes. El límite anterior
     // (1 MB) permitía mandar un mensaje gigante que entraba entero al prompt.
@@ -74,17 +74,6 @@ export async function buildServer(store: ConversationStore, adapter: ChannelAdap
       }
     }
 
-    if (adapter.mode === 'queue') {
-      try {
-        const { redis } = await import('./redis/client.js');
-        await redis.ping();
-        checks.redis = 'ok';
-      } catch (err) {
-        checks.redis = err instanceof Error ? err.message : 'error';
-        ok = false;
-      }
-    }
-
     return reply.code(ok ? 200 : 503).send({ ok, checks });
   });
 
@@ -98,7 +87,7 @@ export async function buildServer(store: ConversationStore, adapter: ChannelAdap
     resolverCorreo: resolverConLlm(),
   });
 
-  const ctx = makeChannelContext(store, loadConfig(), adapter.name, adapter.mode === 'queue');
+  const ctx = makeChannelContext(store, loadConfig(), adapter.name, false);
   await adapter.registerRoutes(app, ctx);
 
   return app;

@@ -3,26 +3,15 @@ import { env } from '../env.js';
 import { logger } from '../logger.js';
 
 /**
- * Conexiones a Redis. Solo se importan desde el camino "encolado" (canales por
- * webhook). El canal `web` y el chat de terminal no tocan este módulo, así que
- * el demo corre sin Redis.
- *
- * BullMQ exige `maxRetriesPerRequest: null` en las conexiones de sus workers,
- * así que compartimos esa config para todo.
+ * Conexión a Redis. Opcional: solo se importa cuando un límite (de tasa o de
+ * gasto) debe compartirse entre varias instancias. Sin Redis esos contadores
+ * viven en memoria de cada proceso, y en Vercel (una instancia por request
+ * concurrente) eso significa que no se comparten: si necesitas el límite global,
+ * este es el módulo que lo hace posible.
  */
-function createRedis(name: string): Redis {
-  const client = new Redis(env.REDIS_URL, {
-    maxRetriesPerRequest: null,
-    enableReadyCheck: false,
-  });
-  client.on('error', (err) => logger.error({ err, name }, 'error de conexión con Redis'));
-  return client;
-}
-
-export const redis = createRedis('general');
-export const queueConnection = createRedis('bullmq-queue');
-export const workerConnection = createRedis('bullmq-worker');
+export const redis = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null, enableReadyCheck: false });
+redis.on('error', (err) => logger.error({ err }, 'error de conexión con Redis'));
 
 export async function closeRedis(): Promise<void> {
-  await Promise.allSettled([redis.quit(), queueConnection.quit(), workerConnection.quit()]);
+  await redis.quit().catch(() => undefined);
 }

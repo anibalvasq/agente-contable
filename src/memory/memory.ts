@@ -11,7 +11,7 @@ import type {
 
 /**
  * Store en RAM. Se pierde al reiniciar el proceso — a propósito: es para el
- * demo (`npm run demo`, `npm run chat`) y para probar sin levantar Postgres.
+ * desarrollo local y para probar sin levantar Postgres.
  * En producción usa STORE=postgres.
  */
 export class MemoryStore implements ConversationStore {

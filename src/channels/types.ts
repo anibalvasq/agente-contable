@@ -31,7 +31,6 @@ export interface ChannelContext {
   store: ConversationStore;
   config: AgentConfig;
   /** Encola un entrante para procesarlo async (canales por webhook). */
-  enqueue(message: NormalizedMessage): Promise<void>;
   /** Procesa un entrante en línea y devuelve la respuesta (canal web). */
   runInline(message: NormalizedMessage): Promise<string | null>;
 }
@@ -59,7 +58,7 @@ export interface ChannelAdapter {
    * 'inline' = request/respuesta (web): corre el agente y devuelve la respuesta
    * en la misma llamada HTTP.
    */
-  readonly mode: 'queue' | 'inline';
+  readonly mode: 'inline';
   /** Monta las rutas HTTP del canal (webhook, UI…). */
   registerRoutes(app: FastifyInstance, ctx: ChannelContext): void | Promise<void>;
   /** Envía la respuesta del agente por el canal. Los inline pueden dejarlo no-op. */

@@ -20,7 +20,7 @@ export interface PanelStore {
 
 /**
  * Archivo JSON en disco. Es el de STORE=memory, a pesar del nombre: si el
- * panel guardara en RAM, `npm run demo` (tsx watch) borraría los clientes cada
+ * panel guardara en RAM, `npm run panel` (tsx watch) borraría los clientes cada
  * vez que guardas un .ts, porque reinicia el proceso.
  */
 export function createFileStore(file: string): PanelStore {
