@@ -1,5 +1,15 @@
-# Vercel publica solo el panel en modo demostración (sin servidor ni base).
-# Lista blanca: así nunca sube .env, data/ ni el código del backend.
-/*
-!/panel
-!/vercel.json
+# Qué NO sube a Vercel. Antes era una lista blanca que dejaba solo panel/ (la demo
+# estática); ahora Vercel corre el backend (api/ + src/), así que se excluye únicamente
+# lo que nunca debe salir de este equipo: secretos, datos locales y material de trabajo.
+.env
+.env.*
+!.env.example
+.deploy-keys/
+data/
+inbox/
+node_modules/
+dist/
+coverage/
+*.log
+.setup-progreso.md
+Flujorama*
