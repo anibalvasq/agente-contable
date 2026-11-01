@@ -7,7 +7,8 @@ import { env } from '../env.js';
  * LLM_MODEL — cualquiera con tool calling sirve.
  */
 export const llm = new OpenAI({
-  apiKey: env.LLM_API_KEY_RESOLVED,
+  // Sin key el cliente igual se crea (el panel arranca sin IA); la llamada al modelo falla con 401.
+  apiKey: env.LLM_API_KEY_RESOLVED ?? 'sin-api-key-configurada',
   baseURL: env.LLM_BASE_URL_RESOLVED,
   // Solo OpenRouter los usa (atribuye el consumo en su dashboard); a OpenAI o
   // Anthropic no hace falta mandarles nada extra.

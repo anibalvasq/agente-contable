@@ -162,10 +162,6 @@ const schema = z
       .default('true')
       .transform((v) => v.toLowerCase() !== 'false'),
   })
-  .refine((e) => Boolean(e.LLM_API_KEY ?? e.OPENROUTER_API_KEY), {
-    message: 'Falta la API key del LLM (LLM_API_KEY, o OPENROUTER_API_KEY)',
-    path: ['LLM_API_KEY'],
-  })
   .refine((e) => !e.SUPABASE_URL || (Boolean(e.SUPABASE_PUBLISHABLE_KEY) && e.STORE === 'postgres'), {
     message: 'SUPABASE_URL requiere SUPABASE_PUBLISHABLE_KEY y STORE=postgres',
     path: ['SUPABASE_URL'],
@@ -202,7 +198,12 @@ if (!parsed.success) {
 export const env = {
   ...parsed.data,
   /** Lo que realmente usa el cliente del LLM (ver llm.ts). */
-  LLM_API_KEY_RESOLVED: (parsed.data.LLM_API_KEY ?? parsed.data.OPENROUTER_API_KEY) as string,
+  /**
+   * Opcional a propósito: el panel, el login y el MCP no usan el modelo. Solo lo necesitan el
+   * asistente del panel, los borradores de respuesta de correos y el canal Telegram. Quien lo use
+   * sin la key recibe un error claro al llamarlo (ver llm.ts y src/index.ts), no al arrancar.
+   */
+  LLM_API_KEY_RESOLVED: parsed.data.LLM_API_KEY ?? parsed.data.OPENROUTER_API_KEY,
   LLM_BASE_URL_RESOLVED: parsed.data.LLM_BASE_URL ?? parsed.data.OPENROUTER_BASE_URL,
 };
 export type Env = typeof env;

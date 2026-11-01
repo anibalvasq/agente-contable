@@ -16,7 +16,7 @@ Sistema del estudio Vergara y Vásquez Auditores: panel para el equipo, procesos
 
 ```bash
 npm install
-cp .env.example .env     # pon OPENROUTER_API_KEY; el resto es opcional en local
+cp .env.example .env     # en local no hace falta nada más; OPENROUTER_API_KEY solo para el asistente
 npm run panel            # http://localhost:3000/panel
 npm run typecheck && npm test
 ```
@@ -34,7 +34,8 @@ Las variables van en Vercel → Settings → Environment Variables, marcando Pre
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secreta.** Solo para crear cuentas |
 | `CREDENTIALS_KEY` | Llave de cifrado de las claves de empresas. Si se pierde, no se recuperan |
 | `MCP_TOKEN` | Token del servidor MCP |
-| `OPENROUTER_API_KEY`, `SESSION_SECRET`, `NODE_ENV=production` | LLM y sesiones |
+| `SESSION_SECRET`, `NODE_ENV=production` | Sesiones y modo producción |
+| `OPENROUTER_API_KEY` (opcional) | Solo para el asistente del panel, los borradores de correo y Telegram. Sin ella el resto funciona |
 
 ### Base de datos
 

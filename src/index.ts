@@ -6,6 +6,8 @@ import { getActiveAdapter } from './channels/registry.js';
 import { buildServer } from './server.js';
 
 async function main(): Promise<void> {
+  // El canal de mensajería vive de responder con el modelo: sin key no tiene sentido arrancarlo.
+  if (!env.LLM_API_KEY_RESOLVED) throw new Error('Falta la API key del LLM (LLM_API_KEY, o OPENROUTER_API_KEY)');
   loadConfig(); // valida agent.yaml al arrancar
   const store = await createStore();
   const adapter = await getActiveAdapter();
