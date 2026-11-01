@@ -3,7 +3,12 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { env } from '../env.js';
+import { hoyChile } from '../agent/tools/chile/calc.js';
+import { cargarReglas, validarReglas } from '../correos/reglas.js';
+import { procesarCorreo, type ResolverIA } from '../correos/procesar.js';
+import type { Empresa } from '../empresas/empresas.js';
 import { logger } from '../logger.js';
+import { armarPlan, planACsv } from '../recordatorios/plan.js';
 import type { PanelStore } from './store.js';
 
 /**
@@ -16,7 +21,7 @@ import type { PanelStore } from './store.js';
 
 // Solo estas colecciones. Sin la lista, el endpoint sería un disco gratis
 // para guardar lo que cualquiera quiera mandarle.
-const COLECCIONES = new Set(['clientes', 'lotes', 'cuentas', 'centros', 'usuarios']);
+const COLECCIONES = new Set(['clientes', 'lotes', 'cuentas', 'centros', 'usuarios', 'empresas', 'reglas']);
 // Tope de una importación. Un plan de cuentas real anda por las 300-800.
 const MAX_LOTE = 3000;
 // Los ids los genera el panel (uid('cli') → "cli_lzx3k9ab1"). Nada de "/" ni "..".
@@ -29,6 +34,8 @@ export interface PanelOptions {
   produccion: boolean;
   /** Se inyecta para poder testear sin llamar al LLM. */
   responder?: (body: unknown) => Promise<unknown>;
+  /** Resolver de consultas simples del proceso 5. Sin él, esas consultas se derivan a una persona. */
+  resolverCorreo?: ResolverIA;
 }
 
 /** Compara en tiempo constante. Hashear antes iguala los largos. */
@@ -89,6 +96,11 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
       if (!body || typeof body !== 'object' || Array.isArray(body) || body.id !== id) {
         return reply.code(400).send({ error: 'el documento debe ser un objeto con el mismo id de la ruta' });
       }
+      if (col === 'reglas') {
+        // Una regla mal escrita se rechaza aquí, no cuando llega un correo real.
+        const v = validarReglas(body);
+        if (!v.ok) return reply.code(400).send({ error: 'reglas inválidas', detalle: v.errores });
+      }
       await store.put(col, id, body);
       return reply.code(204).send();
     },
@@ -119,6 +131,54 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
     await store.remove(col, id);
     return reply.code(204).send();
   });
+
+  // ── Proceso 4: lista de recordatorios del mes. Solo calcula; no envía nada. ──
+  app.get<{ Querystring: { mes?: string; formato?: string; feriados?: string; corridos?: string } }>(
+    '/panel/api/recordatorios',
+    { preHandler: autorizar },
+    async (req, reply) => {
+      const hoy = hoyChile();
+      const mes = req.query.mes ?? hoy.slice(0, 7);
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) return reply.code(400).send({ error: 'mes inválido (AAAA-MM)' });
+      const feriados = (req.query.feriados ?? '').split(',').filter((f) => /^\d{4}-\d{2}-\d{2}$/.test(f));
+      const empresas = (await store.list('empresas')) as Empresa[];
+      const plan = armarPlan(empresas, { mes, hoy, feriados: new Set(feriados), modo: req.query.corridos === '1' ? 'corridos' : 'habiles' });
+      if (req.query.formato === 'csv') {
+        return reply.header('Content-Disposition', `attachment; filename="recordatorios-${mes}.csv"`).type('text/csv; charset=utf-8').send(planACsv(plan));
+      }
+      return plan;
+    },
+  );
+
+  // ── Proceso 5: clasificación y derivación de correos por reglas. ──
+  app.get('/panel/api/correos/reglas', { preHandler: autorizar }, async (_req, reply) => {
+    try {
+      return await cargarReglas(store);
+    } catch (err) {
+      return reply.code(500).send({ error: err instanceof Error ? err.message : 'reglas inválidas' });
+    }
+  });
+
+  app.post<{ Body: { de?: unknown; asunto?: unknown; cuerpo?: unknown; ia?: unknown } }>(
+    '/panel/api/correos/clasificar',
+    { preHandler: autorizar, bodyLimit: 256 * 1024 },
+    async (req, reply) => {
+      const { de, asunto, cuerpo } = req.body ?? {};
+      if (typeof de !== 'string' || typeof asunto !== 'string' || typeof cuerpo !== 'string' || de.length > 320 || asunto.length > 500 || cuerpo.length > 50_000) {
+        return reply.code(400).send({ error: 'se esperan de, asunto y cuerpo como texto' });
+      }
+      try {
+        const { reglas } = await cargarReglas(store);
+        const empresas = (await store.list('empresas')) as Empresa[];
+        // La IA es opt-in por llamada: cada consulta simple cuesta una llamada al modelo.
+        const resolver = req.body?.ia === true ? opts.resolverCorreo : undefined;
+        return await procesarCorreo({ de, asunto, cuerpo }, empresas, reglas, resolver);
+      } catch (err) {
+        logger.error({ err }, 'no se pudo clasificar el correo');
+        return reply.code(500).send({ error: err instanceof Error ? err.message : 'error al clasificar' });
+      }
+    },
+  );
 
   app.post('/panel/api/asistente', { preHandler: autorizar, bodyLimit: 1024 * 1024 }, async (req, reply) => {
     const { asistenteBody, responder } = await import('./assistant.js');

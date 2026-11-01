@@ -1,0 +1,61 @@
+# Reglas de derivación de correos (proceso 5). Se editan sin tocar código.
+#
+# Mientras el estudio no guarde reglas propias en el panel, se usan estas, que
+# son DE EJEMPLO: salen de la tabla parcial del Flujorama y faltan las demás
+# categorías. Cada palabra calza al inicio de una palabra del correo
+# (sin tildes ni mayúsculas): "finiquit" calza "finiquito" y "finiquitos".
+#
+# Cómo decide el clasificador:
+#   1. Identifica la empresa por remitente, dominio del correo o nombre.
+#   2. Prueba las categorías de menor a mayor `prioridad`; gana la primera que calza.
+#   3. Con categoría y gana_sobre_encargado: va al destino de la categoría.
+#      Sin categoría: va al encargado de la empresa. Sin encargado: al `fallback`.
+
+equipo:
+  aquiles:  { nombre: Aquiles,  correo: aquiles@gvergara-auditor.cl }
+  yenifer:  { nombre: Yenifer,  correo: yenifer@gvergara-auditor.cl }
+  gvergara: { nombre: G. Vergara, correo: gvergara@gvergara-auditor.cl }
+  claudia:  { nombre: Claudia,  correo: claudiapinto@gyfal.cl }
+  javier:   { nombre: Javier,   correo: javier@gvergara-auditor.cl }
+  yahel:    { nombre: Yahel,    correo: yahel@vergarayvasquezauditores.com }
+  # "Matías" figura como encargado en la base de 3 empresas que ahora lleva
+  # Yenifer. Cuando el estudio corrija la base, esto deja de hacer falta; mientras
+  # tanto, descomenta el alias y esos correos llegan a Yenifer:
+  # yenifer: { nombre: Yenifer, correo: yenifer@gvergara-auditor.cl, alias: [matias] }
+
+fallback: aquiles
+
+categorias:
+  - { id: finiquitos, nombre: Finiquitos y sus cálculos, destino: aquiles, prioridad: 10, palabras: [finiquit] }
+  - { id: transf_remuneraciones, nombre: Transferencias de remuneraciones, destino: aquiles, prioridad: 20,
+      palabras: [transferencia, transferencias], ademas: [remuneracion, remuneraciones, sueldo, sueldos] }
+  - { id: transf_otras, nombre: Otras transferencias, destino: yenifer, prioridad: 30, palabras: [transferencia, transferencias] }
+  - { id: fichas, nombre: Ingreso de fichas de contratos, destino: yenifer, prioridad: 40,
+      palabras: [contrato, contratos, ficha, fichas, nuevo trabajador, nueva trabajadora] }
+  - { id: previred, nombre: Previred, destino: aquiles, prioridad: 50, palabras: [previred, cotizacion, cotizaciones, afp, isapre] }
+  - { id: remuneraciones, nombre: Remuneraciones, destino: aquiles, prioridad: 60,
+      palabras: [remuneracion, remuneraciones, liquidacion de sueldo, liquidaciones de sueldo, sueldo, sueldos, horas extra] }
+  # Una consulta sobre impuestos (va a G. Vergara) no es lo mismo que un trámite de
+  # impuestos (va a Aquiles): por eso esta categoría exige palabra de consulta Y de impuestos
+  # y se evalúa antes. Si no alcanza, el clasificador marca la duda para revisión humana.
+  - { id: consulta_impuestos, nombre: Consultas sobre impuestos, destino: gvergara, prioridad: 70,
+      palabras: [consulta, duda, pregunta, consultar], ademas: [impuesto, impuestos, iva, renta, f29, f 29, credito fiscal, sii] }
+  - { id: impuestos, nombre: Impuestos, destino: aquiles, prioridad: 80, palabras: [impuesto, impuestos, iva, f29, f 29, ppm, sii, formulario 29] }
+  - { id: emision_facturas, nombre: Emisión de facturas de empresas, destino: yenifer, prioridad: 90,
+      palabras: [emitir factura, emitir una factura, emision de factura, necesito facturar, hacer una factura] }
+  # Ejemplo de consulta simple que resuelve la IA sin molestar a una persona. La
+  # fecha NO la calcula el modelo: se la entrega el código (consultar_vencimientos).
+  # Si la IA no puede responder, el correo va a `destino`.
+  - { id: consulta_vencimientos, nombre: Consulta de fechas de vencimiento, destino: aquiles, prioridad: 65, resuelve_ia: true,
+      palabras: [cuando vence, fecha de vencimiento, plazo del f29, hasta cuando puedo pagar] }
+
+# Excepciones por cliente, por RUT. Ejemplo (descomenta y ajusta el RUT):
+#
+# clientes:
+#   "76123456-7":            # Gastronómica
+#     encargado: yahel       # lo contable lo lleva Yahel…
+#     destinos:              # …pero remuneraciones, impuestos, etc. van a Aquiles
+#       remuneraciones: aquiles
+#       impuestos: aquiles
+#       previred: aquiles
+clientes: {}

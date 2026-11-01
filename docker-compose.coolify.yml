@@ -54,6 +54,8 @@ services:
       - SESSION_SECRET=${SESSION_SECRET:-}
       # Clave del panel del estudio (/panel). Sin ella el panel queda apagado.
       - PANEL_PASSWORD=${PANEL_PASSWORD:-}
+      # Llave que cifra las claves de las empresas (src/security/vault.ts).
+      - CREDENTIALS_KEY=${CREDENTIALS_KEY:-}
       # LLM. OpenRouter por defecto; para Anthropic u OpenAI directo, define
       # LLM_API_KEY y LLM_BASE_URL (mandan sobre OPENROUTER_*).
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}

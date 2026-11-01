@@ -87,4 +87,57 @@ describe('panel', () => {
     assert.equal(ok.statusCode, 200);
     assert.equal(llamadas, 1);
   });
+
+  describe('procesos 4 y 5', () => {
+    const empresa = { id: 'emp_761234560', rut: '76123456-0', rutValido: true, nombre: 'Aromos Ltda.', encargado: 'Javier', f29: true, previred: true, remuneraciones: false, correos: ['a@aromos.cl'] };
+
+    it('arma la lista de recordatorios del mes sin enviar nada', async () => {
+      const { app } = await armar();
+      assert.equal((await app.inject({ url: '/panel/api/recordatorios?mes=2026-11' })).statusCode, 401);
+      await app.inject({ method: 'PUT', url: '/panel/api/docs/empresas/emp_761234560', headers: auth(), payload: empresa });
+      const r = await app.inject({ url: '/panel/api/recordatorios?mes=2026-11', headers: auth() });
+      assert.equal(r.statusCode, 200);
+      assert.equal(r.json().recordatorios.length, 4);
+      assert.equal(r.json().plantillaProvisoria, true);
+      const csv = await app.inject({ url: '/panel/api/recordatorios?mes=2026-11&formato=csv', headers: auth() });
+      assert.match(csv.headers['content-type'] as string, /text\/csv/);
+      assert.equal((await app.inject({ url: '/panel/api/recordatorios?mes=nov', headers: auth() })).statusCode, 400);
+    });
+
+    it('clasifica un correo con las reglas de ejemplo y deriva', async () => {
+      const { app } = await armar();
+      await app.inject({ method: 'PUT', url: '/panel/api/docs/empresas/emp_761234560', headers: auth(), payload: empresa });
+      const post = (payload: object) => app.inject({ method: 'POST', url: '/panel/api/correos/clasificar', headers: auth(), payload });
+      const r = await post({ de: 'a@aromos.cl', asunto: 'Finiquito', cuerpo: 'Necesito el cálculo' });
+      assert.equal(r.statusCode, 200);
+      assert.equal(r.json().destino.clave, 'aquiles');
+      assert.equal(r.json().empresa.nombre, 'Aromos Ltda.');
+      assert.equal((await post({ de: 'a@aromos.cl', asunto: 5 })).statusCode, 400);
+    });
+
+    it('guarda reglas propias, rechaza las inválidas y las usa al clasificar', async () => {
+      const { app } = await armar();
+      const base = (await app.inject({ url: '/panel/api/correos/reglas', headers: auth() })).json();
+      assert.equal(base.origen, 'archivo');
+      const put = (reglas: object) => app.inject({ method: 'PUT', url: '/panel/api/docs/reglas/reg_correo', headers: auth(), payload: { id: 'reg_correo', ...reglas } });
+      assert.equal((await put({ ...base.reglas, fallback: 'nadie' })).statusCode, 400);
+      const propias = { ...base.reglas, fallback: 'yenifer' };
+      assert.equal((await put(propias)).statusCode, 204);
+      assert.equal((await app.inject({ url: '/panel/api/correos/reglas', headers: auth() })).json().origen, 'panel');
+      const r = await app.inject({ method: 'POST', url: '/panel/api/correos/clasificar', headers: auth(), payload: { de: 'x@y.cl', asunto: 'Hola', cuerpo: 'sin tema' } });
+      assert.equal(r.json().destino.clave, 'yenifer'); // el fallback editado, sin tocar código
+    });
+
+    it('la IA es opt-in: sin ia:true no se llama al modelo', async () => {
+      let llamadas = 0;
+      const { app } = await armar({ resolverCorreo: async () => (llamadas++, 'Vence el 20.') });
+      const post = (payload: object) => app.inject({ method: 'POST', url: '/panel/api/correos/clasificar', headers: auth(), payload });
+      const cuerpo = { de: 'x@y.cl', asunto: 'Fecha', cuerpo: '¿Cuándo vence el F29?' };
+      assert.equal((await post(cuerpo)).json().accion, 'derivar');
+      assert.equal(llamadas, 0);
+      const r = (await post({ ...cuerpo, ia: true })).json();
+      assert.equal(r.accion, 'responder_ia');
+      assert.equal(r.borrador, 'Vence el 20.');
+    });
+  });
 });

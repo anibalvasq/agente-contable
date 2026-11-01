@@ -27,6 +27,8 @@ Los otros dos caminos:
 - `src/memory/` — store: `postgres` o `memory` (elegido con `STORE`).
 - `src/security/` — firmas HMAC de webhooks, rate limit, sesiones firmadas.
 - `src/notifications/` — avisos: al equipo por el canal (etiqueta en el CRM) y al desarrollador por mail (Resend).
+- `src/empresas/`, `src/recordatorios/`, `src/correos/` — procesos del estudio: base de empresas (hojas F29/Previred/contactos), lista de recordatorios del mes (`npm run recordatorios`, no envía nada) y clasificación de correos por reglas editables (`config/correo-reglas.yaml` o el panel).
+- `src/credentials/` + `src/security/vault.ts` — claves de las empresas cifradas (AES-256-GCM) con `CREDENTIALS_KEY`. **Ninguna ruta ni herramienta del agente devuelve una clave**; solo código del servidor (el futuro robot) las lee. Se cargan con `npm run claves:importar`.
 - `config/agent.yaml` — identidad, conocimiento y `guardrails` (editable por no-devs).
 
 ## Seguridad — lee esto antes de tocar el agente

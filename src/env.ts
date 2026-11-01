@@ -110,6 +110,13 @@ const schema = z
      */
     ALERT_EMAIL_FROM: conDefault(z.string(), 'onboarding@resend.dev'),
 
+    /**
+     * Llave (32 bytes en base64) con que se cifran las claves de las empresas
+     * en la tabla empresa_credenciales. Va aquí y no en el repo ni en la base.
+     * Genera una con: npm run claves:importar -- --generar-llave
+     */
+    CREDENTIALS_KEY: opcional(z.string()),
+
     // ── LLM (OpenRouter) ──────────────────────────────────────
     // Cualquier API compatible con OpenAI. LLM_API_KEY y LLM_BASE_URL mandan; si
     // no están, se usan las OPENROUTER_* (el nombre original del kit).

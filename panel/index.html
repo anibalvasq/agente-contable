@@ -95,7 +95,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .ledger tr.row-link{cursor:pointer}
 
 /* ---------- contenido ---------- */
-main{padding:32px clamp(16px,3.4vw,48px) 96px;max-width:1280px;width:100%}
+main{padding:32px clamp(16px,3.4vw,48px) 96px;max-width:1280px;width:100%;min-width:0}
 main:focus{outline:none}
 h1{font-size:26px;line-height:1.2;margin:0;font-weight:700;letter-spacing:-.022em}
 h2{font-size:15.5px;margin:0 0 12px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
@@ -245,7 +245,9 @@ table.ledger{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5
 
 @media (max-width:1100px){ .kpis{grid-template-columns:repeat(2,minmax(0,1fr))} }
 @media (max-width:900px){
-  .app{grid-template-columns:1fr}
+  /* minmax(0,…) y no 1fr: con 1fr la columna crece hasta el ancho de la tabla más ancha
+     y la página entera se desplaza de lado en vez de desplazarse la tabla en su tarjeta. */
+  .app{grid-template-columns:minmax(0,1fr)}
   .side{position:sticky;top:env(safe-area-inset-top,0px);height:auto;flex-direction:row;align-items:center;padding:10px 12px;gap:12px;overflow-x:auto;z-index:5}
   .brand .dbl,.brand span,.side .foot{display:none}
   .brand b{font-size:14px;white-space:nowrap}
@@ -253,7 +255,11 @@ table.ledger{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5
   .nav{flex-direction:row;flex:none;overflow:visible;margin:0;padding:0}
   .nav .grp,.nav .grp-i,.nav .grp-i[hidden]{display:contents!important}
   .nav .grp-h{display:none}
-  .nav button{white-space:nowrap}
+  /* El menú pasa a una tira que se desliza con el dedo: sin barra visible, y con
+     botones de al menos ~40px de alto para tocarlos bien. */
+  .side{scrollbar-width:none}
+  .side::-webkit-scrollbar{display:none}
+  .nav button{white-space:nowrap;padding:11px 12px}
   .nav button[aria-current="page"]{box-shadow:none}
   .form-grid{grid-template-columns:1fr}
   .nav .count{display:none}
