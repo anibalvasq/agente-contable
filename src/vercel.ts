@@ -52,6 +52,9 @@ export async function buildPanelApp(): Promise<FastifyInstance> {
       }
     }
     checks.supabase_auth = auth ? 'configurado' : 'sin configurar';
+    // A dónde llevan los enlaces de los correos de invitación. Si sale «sin definir», Supabase usa su
+    // Site URL (típicamente localhost). La URL del propio panel no es un dato secreto.
+    checks.panel_url = env.PANEL_URL ?? 'sin definir (los enlaces del correo irán al Site URL de Supabase)';
     return reply.code(ok ? 200 : 503).send({ ok, checks, ts: new Date().toISOString() });
   });
 
