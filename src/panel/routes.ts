@@ -48,7 +48,7 @@ export interface PanelOptions {
   produccion: boolean;
   /** Se inyecta para poder testear sin llamar al LLM. */
   responder?: (body: unknown, apiKey?: string) => Promise<unknown>;
-  /** API key de Claude por persona. Solo con Supabase Auth; sin él el asistente usa el LLM del estudio. */
+  /** API key de Claude del estudio, configurada por un administrador. Solo con Supabase Auth; sin él el asistente usa el LLM del estudio. */
   claveIa?: ClaveIaService;
   /** Resolver de consultas simples del proceso 5. Sin él, esas consultas se derivan a una persona. */
   resolverCorreo?: ResolverIA;
@@ -122,13 +122,13 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
   app.get('/panel/api/yo', { preHandler: autorizar }, async (req) => ({ miembro: req.miembro ?? null }));
 
   // ── Equipo: crear y administrar quién entra (solo rol admin, solo con Supabase Auth). ──
-  if (auth) {
-    const soloAdmin = async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
-      await autorizar(req, reply);
-      if (reply.sent) return;
-      if (req.miembro?.rol !== 'admin') return reply.code(403).send({ error: 'solo un administrador puede hacer esto' });
-    };
+  const soloAdmin = async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
+    await autorizar(req, reply);
+    if (reply.sent) return;
+    if (req.miembro?.rol !== 'admin') return reply.code(403).send({ error: 'solo un administrador puede hacer esto' });
+  };
 
+  if (auth) {
     app.get('/panel/api/equipo', { preHandler: soloAdmin }, async () => ({ equipo: await auth.equipo.list() }));
 
     app.post<{ Body: { email?: unknown; nombre?: unknown; rol?: unknown; password?: unknown } }>(
@@ -278,7 +278,7 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
     },
   );
 
-  // ── API key de Claude de cada persona (BYOK). Nunca se devuelve: solo estado y últimos 4. ──
+  // ── API key de Claude del estudio: la configura un administrador. Nunca se devuelve: solo estado y últimos 4. ──
   const { claveIa } = opts;
   const limitador = new MemoryRateLimiter();
   const sinCache = (reply: FastifyReply): void => void reply.header('Cache-Control', 'no-store');
@@ -287,10 +287,13 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
     sinCache(reply);
     // Sin cuentas reales (o sin llave de cifrado) el asistente usa el LLM del estudio: no hay nada que configurar.
     if (!claveIa || !req.miembro) return { estado: 'no_requerida' };
-    return claveIa.estado(req.miembro.userId);
+    const e = await claveIa.estado();
+    // El equipo solo necesita saber si el asistente está disponible; el detalle es para administradores.
+    if (req.miembro.rol !== 'admin') return { estado: e.estado };
+    return e;
   });
 
-  app.post<{ Body: { clave?: unknown } }>('/panel/api/ia/clave', { preHandler: autorizar, bodyLimit: 2 * 1024 }, async (req, reply) => {
+  app.post<{ Body: { clave?: unknown } }>('/panel/api/ia/clave', { preHandler: soloAdmin, bodyLimit: 2 * 1024 }, async (req, reply) => {
     sinCache(reply);
     if (!claveIa || !req.miembro) return reply.code(404).send({ error: 'no_disponible' });
     const clave = req.body?.clave;
@@ -299,8 +302,8 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
     const lim = await limitador.hit(`clave:${req.miembro.userId}`, 10, 60_000);
     if (!lim.allowed) return reply.code(429).header('Retry-After', Math.ceil(lim.retryAfterMs / 1000)).send({ error: 'demasiados_intentos' });
     try {
-      const r = await claveIa.guardar(req.miembro.userId, clave);
-      logger.info({ por: req.miembro.email }, 'API key de Claude guardada'); // nunca la key
+      const r = await claveIa.guardar(clave, req.miembro.email);
+      logger.info({ por: req.miembro.email }, 'API key de Claude del estudio guardada'); // nunca la key
       return r;
     } catch (err) {
       if (err instanceof ErrorClave) {
@@ -313,10 +316,11 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
     }
   });
 
-  app.delete('/panel/api/ia/clave', { preHandler: autorizar }, async (req, reply) => {
+  app.delete('/panel/api/ia/clave', { preHandler: soloAdmin }, async (req, reply) => {
     sinCache(reply);
     if (!claveIa || !req.miembro) return reply.code(404).send({ error: 'no_disponible' });
-    await claveIa.eliminar(req.miembro.userId);
+    await claveIa.eliminar();
+    logger.info({ por: req.miembro.email }, 'API key de Claude del estudio eliminada');
     return reply.code(204).send();
   });
 
@@ -328,17 +332,18 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
       const grande = parsed.error.issues.some((i) => i.code === 'too_big');
       return reply.code(grande ? 413 : 400).send({ error: grande ? 'demasiados datos' : 'consulta inválida' });
     }
-    // Con cuentas reales, cada persona consulta con SU key. 428 = falta algo previo (configurar la key);
-    // no es 401/403 porque el panel cerraría la sesión.
+    // Con cuentas reales el asistente usa la key del estudio que configuró un administrador. 428 = falta
+    // algo previo (configurarla); no es 401/403 porque el panel cerraría la sesión.
     let apiKey: string | undefined;
     const userId = req.miembro?.userId;
     if (claveIa && userId) {
+      // El tope es por persona: una sola no puede gastar la key de todo el estudio.
       const lim = await limitador.hit(`asistente:${userId}`, 30, 60_000);
       if (!lim.allowed) return reply.code(429).header('Retry-After', Math.ceil(lim.retryAfterMs / 1000)).send({ error: 'demasiadas_consultas' });
       try {
-        apiKey = await claveIa.usar(userId);
+        apiKey = await claveIa.usar();
       } catch (err) {
-        if (err instanceof ErrorClave) return reply.code(428).send({ error: err.codigo, mensaje: 'Configura tu API key de Claude en el asistente.' });
+        if (err instanceof ErrorClave) return reply.code(428).send({ error: err.codigo });
         throw err;
       }
     }
@@ -346,10 +351,10 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
       return await (opts.responder ?? responder)(parsed.data, apiKey);
     } catch (err) {
       if (err instanceof ErrorAnthropic) {
-        // Anthropic rechazó la key (revocada, sin permisos): se marca para que la persona la reemplace.
+        // Anthropic rechazó la key (revocada, sin permisos): se marca para que un administrador la reemplace.
         if (err.tipo === 'clave_invalida' && claveIa && userId) {
-          await claveIa.marcarInvalida(userId);
-          return reply.code(428).send({ error: 'clave_invalida', mensaje: 'Tu API key fue rechazada. Pega una nueva.' });
+          await claveIa.marcarInvalida();
+          return reply.code(428).send({ error: 'clave_invalida' });
         }
         if (err.tipo === 'sin_saldo') return reply.code(402).send({ error: 'sin_saldo' });
         if (err.tipo === 'limite') return reply.code(429).header('Retry-After', Math.ceil((err.reintentarMs ?? 3_000) / 1000)).send({ error: 'limite_del_modelo' });

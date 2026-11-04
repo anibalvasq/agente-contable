@@ -1,17 +1,17 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import Fastify from 'fastify';
+import { createMemoryEquipoStore } from '../auth/equipo.js';
+import type { Autenticador } from '../auth/supabase.js';
 import { ErrorAnthropic, llamarAnthropic, redactarClaves } from './anthropic.js';
 import { responderConClaude } from './assistant.js';
 import { createClaveIaService, createMemoryClaveStore, ErrorClave } from './claveIa.js';
 import { registerPanel } from './routes.js';
-import { createMemoryEquipoStore } from '../auth/equipo.js';
-import type { Autenticador } from '../auth/supabase.js';
 import { createFileStore } from './store.js';
-import { mkdtemp } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
 
 const KEY = 'sk-ant-api03-' + 'a'.repeat(30);
 const OTRA = 'sk-ant-api03-' + 'b'.repeat(30);
@@ -21,50 +21,51 @@ function servicio(llamar: Parameters<typeof createClaveIaService>[0]['llamar'] =
   return { store, svc: createClaveIaService({ store, llave: randomBytes(32), modelo: 'm', llamar }) };
 }
 
-describe('API key por persona', () => {
+describe('API key del estudio', () => {
   it('rechaza lo que no parece una key sin llamar a Anthropic', async () => {
     let llamadas = 0;
     const { svc } = servicio(async () => (llamadas++, { content: [] }));
-    await assert.rejects(svc.guardar('u1', 'hola'), (e: ErrorClave) => e.codigo === 'formato_invalido');
+    await assert.rejects(svc.guardar('hola', 'ana@e.cl'), (e: ErrorClave) => e.codigo === 'formato_invalido');
     assert.equal(llamadas, 0);
   });
 
-  it('verifica con una llamada mínima y guarda cifrada: solo se ven los últimos 4', async () => {
+  it('verifica con una llamada mínima y la guarda CIFRADA: en claro no queda en ninguna parte', async () => {
     const llamadas: { max_tokens: number }[] = [];
     const { svc, store } = servicio(async (_k, p) => (llamadas.push(p), { content: [] }));
-    assert.deepEqual(await svc.guardar('u1', ` ${KEY} `), { estado: 'activa', ultimos4: 'aaaa' });
+    assert.deepEqual(await svc.guardar(` ${KEY} `, 'ana@e.cl'), { estado: 'activa', ultimos4: 'aaaa', por: 'ana@e.cl' });
     assert.equal(llamadas[0]?.max_tokens, 1);
-    const fila = await store.get('u1');
+    const fila = await store.get();
     assert.ok(fila && !fila.cifrada.includes(KEY) && !fila.cifrada.includes('sk-ant'));
-    assert.equal(await svc.usar('u1'), KEY);
-    assert.deepEqual(await svc.estado('u1'), { estado: 'activa', ultimos4: 'aaaa' });
+    assert.equal(await svc.usar(), KEY);
+    assert.deepEqual(await svc.estado(), { estado: 'activa', ultimos4: 'aaaa', por: 'ana@e.cl' });
   });
 
   it('si Anthropic rechaza la key, no se guarda nada', async () => {
     const { svc } = servicio(async () => {
       throw new ErrorAnthropic('clave_invalida', 401);
     });
-    await assert.rejects(svc.guardar('u1', KEY), (e: ErrorClave) => e.codigo === 'clave_rechazada');
-    assert.deepEqual(await svc.estado('u1'), { estado: 'sin_clave' });
+    await assert.rejects(svc.guardar(KEY, 'ana@e.cl'), (e: ErrorClave) => e.codigo === 'clave_rechazada');
+    assert.deepEqual(await svc.estado(), { estado: 'sin_clave' });
   });
 
-  it('la key de una persona no sirve bajo otra (la fila copiada no descifra)', async () => {
-    const { svc, store } = servicio();
-    await svc.guardar('u1', KEY);
-    await store.put('u2', (await store.get('u1'))!);
-    await assert.rejects(svc.usar('u2'), (e: ErrorClave) => e.codigo === 'clave_invalida');
-    assert.equal((await svc.estado('u2')).estado, 'invalida');
+  it('con otra llave de cifrado (o la fila alterada) la key no se descifra y queda inválida', async () => {
+    const store = createMemoryClaveStore();
+    const a = createClaveIaService({ store, llave: randomBytes(32), modelo: 'm', llamar: async () => ({ content: [] }) });
+    await a.guardar(KEY, 'ana@e.cl');
+    const b = createClaveIaService({ store, llave: randomBytes(32), modelo: 'm' });
+    await assert.rejects(b.usar(), (e: ErrorClave) => e.codigo === 'clave_invalida');
+    assert.equal((await b.estado()).estado, 'invalida');
   });
 
   it('marcada inválida pide reemplazo; reemplazar y eliminar funcionan', async () => {
     const { svc } = servicio();
-    await svc.guardar('u1', KEY);
-    await svc.marcarInvalida('u1');
-    await assert.rejects(svc.usar('u1'), (e: ErrorClave) => e.codigo === 'clave_invalida');
-    await svc.guardar('u1', OTRA);
-    assert.equal(await svc.usar('u1'), OTRA);
-    await svc.eliminar('u1');
-    await assert.rejects(svc.usar('u1'), (e: ErrorClave) => e.codigo === 'sin_clave');
+    await svc.guardar(KEY, 'ana@e.cl');
+    await svc.marcarInvalida();
+    await assert.rejects(svc.usar(), (e: ErrorClave) => e.codigo === 'clave_invalida');
+    await svc.guardar(OTRA, 'beto@e.cl');
+    assert.equal(await svc.usar(), OTRA);
+    await svc.eliminar();
+    await assert.rejects(svc.usar(), (e: ErrorClave) => e.codigo === 'sin_clave');
   });
 });
 
@@ -102,7 +103,7 @@ describe('cliente de Anthropic', () => {
   });
 });
 
-describe('asistente con la key de la persona', () => {
+describe('asistente con la key del estudio', () => {
   it('traduce mensajes y herramientas al formato de Anthropic y de vuelta', async () => {
     let visto: any;
     const r = await responderConClaude(
@@ -136,7 +137,7 @@ describe('asistente con la key de la persona', () => {
 describe('rutas de la API key', () => {
   async function armar(responder?: (b: unknown, k?: string) => Promise<unknown>) {
     const equipo = createMemoryEquipoStore();
-    await equipo.insert({ userId: 'u-ana', email: 'ana@e.cl', nombre: 'Ana', rol: 'equipo', activo: true });
+    await equipo.insert({ userId: 'u-ana', email: 'ana@e.cl', nombre: 'Ana', rol: 'admin', activo: true });
     await equipo.insert({ userId: 'u-beto', email: 'beto@e.cl', nombre: 'Beto', rol: 'equipo', activo: true });
     const auth: Autenticador = {
       config: { url: 'https://x', publishableKey: 'p' },
@@ -150,46 +151,56 @@ describe('rutas de la API key', () => {
       },
       olvidar: () => {},
     };
-    const { svc } = servicio();
+    const { svc, store } = servicio();
     const app = Fastify();
     const dir = await mkdtemp(path.join(tmpdir(), 'panel-'));
     await registerPanel(app, { store: createFileStore(path.join(dir, 'p.json')), clave: undefined, produccion: true, auth, claveIa: svc, ...(responder ? { responder } : {}) });
     const h = (u: string) => ({ authorization: `Bearer tok-${u}` });
-    return { app, h };
+    return { app, h, store };
   }
   const consulta = { datos: 'd', mensajes: [{ role: 'user', content: 'hola' }] };
+  const guardar = (app: Awaited<ReturnType<typeof armar>>['app'], quien: { authorization: string }, clave: string = KEY) =>
+    app.inject({ method: 'POST', url: '/panel/api/ia/clave', headers: quien, payload: { clave } });
 
   it('sin key el asistente responde 428 y no llama al modelo', async () => {
     let llamado = false;
     const { app, h } = await armar(async () => ((llamado = true), {}));
-    const r = await app.inject({ method: 'POST', url: '/panel/api/asistente', headers: h('ana'), payload: consulta });
+    const r = await app.inject({ method: 'POST', url: '/panel/api/asistente', headers: h('beto'), payload: consulta });
     assert.equal(r.statusCode, 428);
     assert.equal(r.json().error, 'sin_clave');
     assert.equal(llamado, false);
   });
 
-  it('guarda la key, usa la de cada persona y nunca la devuelve', async () => {
+  it('solo un administrador configura o elimina la key', async () => {
+    const { app, h } = await armar();
+    assert.equal((await guardar(app, h('beto'))).statusCode, 403);
+    assert.equal((await app.inject({ method: 'DELETE', url: '/panel/api/ia/clave', headers: h('beto') })).statusCode, 403);
+    assert.equal((await app.inject({ method: 'POST', url: '/panel/api/ia/clave', payload: { clave: KEY } })).statusCode, 401);
+    assert.equal((await guardar(app, h('ana'))).statusCode, 200);
+    assert.equal((await app.inject({ method: 'DELETE', url: '/panel/api/ia/clave', headers: h('beto') })).statusCode, 403);
+    assert.equal((await app.inject({ method: 'DELETE', url: '/panel/api/ia/clave', headers: h('ana') })).statusCode, 204);
+  });
+
+  it('el admin guarda una key y todo el equipo la usa; nunca se devuelve ni se guarda en claro', async () => {
     const usadas: (string | undefined)[] = [];
-    const { app, h } = await armar(async (_b, k) => (usadas.push(k), { content: 'ok', tool_calls: [] }));
-    // El servicio de prueba acepta cualquier key con formato válido (llamar devuelve vacío).
-    const g = await app.inject({ method: 'POST', url: '/panel/api/ia/clave', headers: h('ana'), payload: { clave: KEY } });
+    const { app, h, store } = await armar(async (_b, k) => (usadas.push(k), { content: 'ok', tool_calls: [] }));
+    const g = await guardar(app, h('ana'));
     assert.equal(g.statusCode, 200);
     assert.ok(!g.body.includes(KEY) && g.headers['cache-control'] === 'no-store');
-    assert.deepEqual((await app.inject({ url: '/panel/api/ia/clave', headers: h('ana') })).json(), { estado: 'activa', ultimos4: 'aaaa' });
-    // Beto no ve la de Ana.
-    assert.deepEqual((await app.inject({ url: '/panel/api/ia/clave', headers: h('beto') })).json(), { estado: 'sin_clave' });
-    assert.equal((await app.inject({ method: 'POST', url: '/panel/api/asistente', headers: h('ana'), payload: consulta })).statusCode, 200);
+    assert.ok(!(await store.get())!.cifrada.includes('sk-ant'));
+    // El admin ve el detalle; el equipo solo si el asistente está disponible.
+    assert.deepEqual((await app.inject({ url: '/panel/api/ia/clave', headers: h('ana') })).json(), { estado: 'activa', ultimos4: 'aaaa', por: 'ana@e.cl' });
+    assert.deepEqual((await app.inject({ url: '/panel/api/ia/clave', headers: h('beto') })).json(), { estado: 'activa' });
+    assert.equal((await app.inject({ method: 'POST', url: '/panel/api/asistente', headers: h('beto'), payload: consulta })).statusCode, 200);
     assert.deepEqual(usadas, [KEY]);
-    assert.equal((await app.inject({ method: 'POST', url: '/panel/api/asistente', headers: h('beto'), payload: consulta })).statusCode, 428);
-    assert.equal((await app.inject({ method: 'DELETE', url: '/panel/api/ia/clave', headers: h('ana') })).statusCode, 204);
   });
 
   it('si Anthropic rechaza la key al consultar, queda inválida y pide reemplazo', async () => {
     const { app, h } = await armar(async () => {
       throw new ErrorAnthropic('clave_invalida', 401);
     });
-    await app.inject({ method: 'POST', url: '/panel/api/ia/clave', headers: h('ana'), payload: { clave: KEY } });
-    const r = await app.inject({ method: 'POST', url: '/panel/api/asistente', headers: h('ana'), payload: consulta });
+    await guardar(app, h('ana'));
+    const r = await app.inject({ method: 'POST', url: '/panel/api/asistente', headers: h('beto'), payload: consulta });
     assert.equal(r.statusCode, 428);
     assert.equal(r.json().error, 'clave_invalida');
     assert.equal((await app.inject({ url: '/panel/api/ia/clave', headers: h('ana') })).json().estado, 'invalida');
@@ -198,9 +209,11 @@ describe('rutas de la API key', () => {
   it('exige sesión y limita las consultas por persona', async () => {
     const { app, h } = await armar(async () => ({ content: 'ok', tool_calls: [] }));
     assert.equal((await app.inject({ url: '/panel/api/ia/clave' })).statusCode, 401);
-    await app.inject({ method: 'POST', url: '/panel/api/ia/clave', headers: h('ana'), payload: { clave: KEY } });
+    await guardar(app, h('ana'));
     let ultimo = 0;
-    for (let i = 0; i < 31; i++) ultimo = (await app.inject({ method: 'POST', url: '/panel/api/asistente', headers: h('ana'), payload: consulta })).statusCode;
+    for (let i = 0; i < 31; i++) ultimo = (await app.inject({ method: 'POST', url: '/panel/api/asistente', headers: h('beto'), payload: consulta })).statusCode;
     assert.equal(ultimo, 429);
+    // El tope es por persona: otra no queda bloqueada.
+    assert.equal((await app.inject({ method: 'POST', url: '/panel/api/asistente', headers: h('ana'), payload: consulta })).statusCode, 200);
   });
 });

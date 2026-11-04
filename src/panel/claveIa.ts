@@ -2,9 +2,10 @@ import { cifrar, descifrar } from '../security/vault.js';
 import { ErrorAnthropic, llamarAnthropic, type PeticionAnthropic, type RespuestaAnthropic } from './anthropic.js';
 
 /**
- * API key de Claude de cada persona (BYOK). La guarda cifrada (AES-256-GCM, la misma bóveda de las
- * claves de empresas) y SOLO código del servidor la descifra, dentro de la request que la usa.
- * Ninguna ruta la devuelve: al navegador llegan los últimos 4 caracteres y el estado.
+ * API key de Claude del ESTUDIO: la configura un administrador y la usa el asistente del panel
+ * para todo el equipo. Se cifra en cuanto llega al servidor (AES-256-GCM, la misma bóveda de las
+ * claves de empresas) y solo código del servidor la descifra, dentro de la request que la usa.
+ * Ninguna ruta la devuelve: al panel llegan el estado y los últimos 4 caracteres.
  */
 
 export type EstadoClave = 'activa' | 'invalida';
@@ -13,16 +14,18 @@ export interface FilaClave {
   cifrada: string;
   ultimos4: string;
   estado: EstadoClave;
+  /** Correo de quien la configuró. */
+  por: string;
 }
 
 export interface ClaveStore {
-  get(userId: string): Promise<FilaClave | undefined>;
-  put(userId: string, fila: FilaClave): Promise<void>;
-  setEstado(userId: string, estado: EstadoClave): Promise<void>;
-  remove(userId: string): Promise<void>;
+  get(): Promise<FilaClave | undefined>;
+  put(fila: FilaClave): Promise<void>;
+  setEstado(estado: EstadoClave): Promise<void>;
+  remove(): Promise<void>;
 }
 
-export type EstadoParaPanel = { estado: 'sin_clave' } | { estado: EstadoClave; ultimos4: string };
+export type EstadoParaPanel = { estado: 'sin_clave' } | { estado: EstadoClave; ultimos4: string; por: string };
 
 export class ErrorClave extends Error {
   constructor(readonly codigo: 'sin_clave' | 'clave_invalida' | 'formato_invalido' | 'clave_rechazada' | 'sin_saldo' | 'no_se_pudo_verificar') {
@@ -33,17 +36,17 @@ export class ErrorClave extends Error {
 // Las keys de la Console empiezan con "sk-ant-" (p. ej. sk-ant-api03-…). El largo mínimo descarta pegados a medias.
 const FORMATO = /^sk-ant-[A-Za-z0-9_-]{20,}$/;
 
-/** El user_id va como dato autenticado: la fila de una persona no descifra bajo otra. */
-const aad = (userId: string): string => `claveia:${userId}`;
+/** Dato autenticado del cifrado: una fila copiada a otro contexto no descifra. */
+const AAD = 'claveia:estudio';
 
 export interface ClaveIaService {
-  estado(userId: string): Promise<EstadoParaPanel>;
+  estado(): Promise<EstadoParaPanel>;
   /** Valida el formato, la prueba con una llamada mínima y solo entonces la cifra y guarda. */
-  guardar(userId: string, clave: string): Promise<EstadoParaPanel>;
-  eliminar(userId: string): Promise<void>;
+  guardar(clave: string, por: string): Promise<EstadoParaPanel>;
+  eliminar(): Promise<void>;
   /** La key descifrada, para usarla en esta request. Lanza ErrorClave si falta o no sirve. */
-  usar(userId: string): Promise<string>;
-  marcarInvalida(userId: string): Promise<void>;
+  usar(): Promise<string>;
+  marcarInvalida(): Promise<void>;
 }
 
 export interface ClaveIaOpts {
@@ -56,12 +59,12 @@ export interface ClaveIaOpts {
 
 export function createClaveIaService({ store, llave, modelo, llamar = (k, p) => llamarAnthropic(k, p) }: ClaveIaOpts): ClaveIaService {
   return {
-    async estado(userId) {
-      const f = await store.get(userId);
-      return f ? { estado: f.estado, ultimos4: f.ultimos4 } : { estado: 'sin_clave' };
+    async estado() {
+      const f = await store.get();
+      return f ? { estado: f.estado, ultimos4: f.ultimos4, por: f.por } : { estado: 'sin_clave' };
     },
 
-    async guardar(userId, claveCruda) {
+    async guardar(claveCruda, por) {
       const clave = claveCruda.trim();
       if (!FORMATO.test(clave)) throw new ErrorClave('formato_invalido');
       try {
@@ -74,50 +77,48 @@ export function createClaveIaService({ store, llave, modelo, llamar = (k, p) => 
         }
         throw new ErrorClave('no_se_pudo_verificar');
       }
-      const fila: FilaClave = { cifrada: cifrar(clave, llave, aad(userId)), ultimos4: clave.slice(-4), estado: 'activa' };
-      await store.put(userId, fila);
-      return { estado: 'activa', ultimos4: fila.ultimos4 };
+      const fila: FilaClave = { cifrada: cifrar(clave, llave, AAD), ultimos4: clave.slice(-4), estado: 'activa', por };
+      await store.put(fila);
+      return { estado: 'activa', ultimos4: fila.ultimos4, por };
     },
 
-    async eliminar(userId) {
-      await store.remove(userId);
+    async eliminar() {
+      await store.remove();
     },
 
-    async usar(userId) {
-      const f = await store.get(userId);
+    async usar() {
+      const f = await store.get();
       if (!f) throw new ErrorClave('sin_clave');
       if (f.estado === 'invalida') throw new ErrorClave('clave_invalida');
       try {
-        return descifrar(f.cifrada, llave, aad(userId));
+        return descifrar(f.cifrada, llave, AAD);
       } catch {
-        // Llave rotada o fila alterada: no hay forma de usarla, la persona tiene que volver a pegarla.
-        await store.setEstado(userId, 'invalida');
+        // Llave rotada o fila alterada: no hay forma de usarla, un administrador tiene que volver a pegarla.
+        await store.setEstado('invalida');
         throw new ErrorClave('clave_invalida');
       }
     },
 
-    async marcarInvalida(userId) {
-      await store.setEstado(userId, 'invalida');
+    async marcarInvalida() {
+      await store.setEstado('invalida');
     },
   };
 }
 
 export function createMemoryClaveStore(): ClaveStore {
-  const m = new Map<string, FilaClave>();
+  let fila: FilaClave | undefined;
   return {
-    async get(id) {
-      const f = m.get(id);
-      return f ? { ...f } : undefined;
+    async get() {
+      return fila ? { ...fila } : undefined;
     },
-    async put(id, f) {
-      m.set(id, { ...f });
+    async put(f) {
+      fila = { ...f };
     },
-    async setEstado(id, estado) {
-      const f = m.get(id);
-      if (f) m.set(id, { ...f, estado });
+    async setEstado(estado) {
+      if (fila) fila = { ...fila, estado };
     },
-    async remove(id) {
-      m.delete(id);
+    async remove() {
+      fila = undefined;
     },
   };
 }
@@ -126,29 +127,31 @@ interface Fila {
   clave_cifrada: string;
   ultimos4: string;
   estado: EstadoClave;
+  actualizado_por: string;
 }
 
-/** Tabla `claves_ia` (migrations/0005_claves_ia.sql). Toda consulta filtra por el user_id de la sesión. */
+/** Tabla `clave_ia_estudio` (migrations/0006_clave_ia_estudio.sql): una sola fila. */
 export async function createPostgresClaveStore(): Promise<ClaveStore> {
   const { query } = await import('../db/client.js');
   return {
-    async get(id) {
-      const r = await query<Fila>('SELECT clave_cifrada, ultimos4, estado FROM claves_ia WHERE user_id = $1', [id]);
+    async get() {
+      const r = await query<Fila>("SELECT clave_cifrada, ultimos4, estado, actualizado_por FROM clave_ia_estudio WHERE id = 'estudio'");
       const f = r.rows[0];
-      return f ? { cifrada: f.clave_cifrada, ultimos4: f.ultimos4, estado: f.estado } : undefined;
+      return f ? { cifrada: f.clave_cifrada, ultimos4: f.ultimos4, estado: f.estado, por: f.actualizado_por } : undefined;
     },
-    async put(id, f) {
+    async put(f) {
       await query(
-        `INSERT INTO claves_ia (user_id, clave_cifrada, ultimos4, estado) VALUES ($1, $2, $3, $4)
-         ON CONFLICT (user_id) DO UPDATE SET clave_cifrada = EXCLUDED.clave_cifrada, ultimos4 = EXCLUDED.ultimos4, estado = EXCLUDED.estado, actualizado = now()`,
-        [id, f.cifrada, f.ultimos4, f.estado],
+        `INSERT INTO clave_ia_estudio (id, clave_cifrada, ultimos4, estado, actualizado_por) VALUES ('estudio', $1, $2, $3, $4)
+         ON CONFLICT (id) DO UPDATE SET clave_cifrada = EXCLUDED.clave_cifrada, ultimos4 = EXCLUDED.ultimos4, estado = EXCLUDED.estado,
+           actualizado_por = EXCLUDED.actualizado_por, actualizado = now()`,
+        [f.cifrada, f.ultimos4, f.estado, f.por],
       );
     },
-    async setEstado(id, estado) {
-      await query('UPDATE claves_ia SET estado = $2, actualizado = now() WHERE user_id = $1', [id, estado]);
+    async setEstado(estado) {
+      await query("UPDATE clave_ia_estudio SET estado = $1, actualizado = now() WHERE id = 'estudio'", [estado]);
     },
-    async remove(id) {
-      await query('DELETE FROM claves_ia WHERE user_id = $1', [id]);
+    async remove() {
+      await query("DELETE FROM clave_ia_estudio WHERE id = 'estudio'");
     },
   };
 }

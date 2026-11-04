@@ -582,7 +582,7 @@ const DL_LOCAL = { async save({ filename, data }) {
 function salir() {
   generacion++; DB = null; SAMPLE = null;
   S.sesion = null; S.clientes = []; S.lotes = []; S.cuentas = []; S.centros = []; S.usuarios = []; S.rt = {}; S.chat = []; S.view = 'panel'; S.params = {};
-  S.yo = null; S.equipo = undefined; S.claveIa = null; S.claveIaEditar = false;
+  S.yo = null; S.equipo = undefined; S.claveIa = undefined;
   lsDel('ac_sesion'); lsDel('ac_clave'); lsDel(TOK_KEY); render();
 }
 // Modo demostración: el mismo HTML publicado como sitio estático (Vercel), sin
@@ -1150,7 +1150,7 @@ const NAV = [
   ['ia', 'Procesos IA', [['ia-mapa', 'Mapa de procesos'], ['ia-fact', '1 · Facturación'], ['ia-cobro', '2 y 7 · Cobranza'], ['ia-f29', '3 · F29 y Previred'], ['ia-recordatorios', '4 · Recordatorios'], ['ia-bandeja', '5 · Correos entrantes']]],
   ['operacion', 'Operación', [['lotes', 'Lotes de comprobantes'], ['nuevo', 'Nuevo lote'], ['carga', 'Carga Defontana']]],
   ['procesos', 'Procesos', [['procesos', 'Procesos por cliente'], ['correos', 'Correos tributarios']]],
-  ['mant', 'Mantenedores', [['clientes', 'Clientes'], ['cuentas', 'Plan de cuentas'], ['centros', 'Centros de costo'], ['reglas', 'Reglas de validación'], ['usuarios', 'Usuarios'], ['equipo', 'Accesos al panel']]]
+  ['mant', 'Mantenedores', [['clientes', 'Clientes'], ['cuentas', 'Plan de cuentas'], ['centros', 'Centros de costo'], ['reglas', 'Reglas de validación'], ['usuarios', 'Usuarios'], ['equipo', 'Accesos al panel'], ['ia', 'Asistente IA']]]
 ];
 // Íconos de trazo (24x24) para el menú y las tarjetas del panel.
 const ICO_PATHS = {
@@ -1165,6 +1165,7 @@ const ICO_PATHS = {
   centros: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',
   reglas: '<path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
   equipo: '<rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  ia: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>',
   usuarios: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/>',
   alerta: '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17.5v.5"/>',
   'ia-mapa': '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
@@ -1183,7 +1184,7 @@ function renderNav() {
   $('#nav').innerHTML = NAV.map(([g, t, items]) => {
     const abierto = !S.navCerrado[g];
     return `<div class="grp"><button class="grp-h" data-a="nav-grp" data-g="${g}" aria-expanded="${abierto}"><span>${t}</span><span class="chev" aria-hidden="true">${abierto ? '▾' : '▸'}</span></button>
-      <div class="grp-i" ${abierto ? '' : 'hidden'}>${items.filter(([v]) => v !== 'equipo' || S.yo?.rol === 'admin').map(([v, tt]) => `<button data-a="go" data-v="${v}" ${cur === v ? 'aria-current="page"' : ''}><span>${ico(v)}<span>${tt}</span></span><span class="count">${cnt[v] || ''}</span></button>`).join('')}</div></div>`;
+      <div class="grp-i" ${abierto ? '' : 'hidden'}>${items.filter(([v]) => !['equipo', 'ia'].includes(v) || S.yo?.rol === 'admin').map(([v, tt]) => `<button data-a="go" data-v="${v}" ${cur === v ? 'aria-current="page"' : ''}><span>${ico(v)}<span>${tt}</span></span><span class="count">${cnt[v] || ''}</span></button>`).join('')}</div></div>`;
   }).join('');
 }
 function render() {
@@ -1192,7 +1193,7 @@ function render() {
   const V = {
     panel: vPanel, lotes: vLotes, lote: vLote, nuevo: vNuevo, carga: vCarga,
     procesos: vProcesos, correos: vCorreos, 'nuevo-proceso': vNuevoProceso, proceso: vProceso,
-    equipo: vEquipo, clientes: vClientes, cliente: vCliente, cuentas: () => vMant('cuentas'), centros: () => vMant('centros'), usuarios: () => vMant('usuarios'),
+    equipo: vEquipo, ia: vAsistenteIa, clientes: vClientes, cliente: vCliente, cuentas: () => vMant('cuentas'), centros: () => vMant('centros'), usuarios: () => vMant('usuarios'),
     reglas: vReglas, 'mant-form': vMantForm, 'mant-import': vMantImport,
     'ia-mapa': vIaMapa, 'ia-fact': vIaFact, 'ia-cobro': vIaCobro, 'ia-f29': vIaF29, 'ia-recordatorios': vIaRecordatorios, 'ia-bandeja': vIaBandeja
   }[S.view] || vPanel;
@@ -1825,21 +1826,40 @@ function vReglas() {
   </div>`;
 }
 
+/* Pestaña de administradores: la API key de Claude del estudio. Se cifra en el servidor al guardarla y no vuelve al navegador. */
+function vAsistenteIa() {
+  if (S.claveIa === undefined) cargarClaveIa(); // null = ya se intentó y falló: no se reintenta en cada dibujo
+  const ia = S.claveIa;
+  let estado;
+  if (ia === undefined) estado = '<p class="muted">Cargando…</p>';
+  else if (!ia) estado = '<p class="muted">No se pudo cargar el estado de la API key. Recarga la página.</p>';
+  else if (ia.estado === 'no_requerida') estado = '<p class="muted">Esta instalación no usa API key por estudio: el asistente consulta con el modelo configurado en el servidor.</p>';
+  else if (ia.estado === 'sin_clave') estado = '<p><span class="badge">Sin API key</span> El asistente no puede responder hasta que pegues una.</p>';
+  else estado = `<p><span class="badge">${ia.estado === 'activa' ? 'Activa' : 'Rechazada'}</span> <b>sk-ant-…${esc(ia.ultimos4)}</b>${ia.por ? ` · configurada por ${esc(ia.por)}` : ''}</p>${ia.estado === 'invalida' ? '<p class="small err">Anthropic rechazó esta key (revocada o sin permisos). Pega una nueva.</p>' : ''}`;
+  const puede = ia && ia.estado !== 'no_requerida';
+  const hayClave = puede && ia.estado !== 'sin_clave';
+  return `<div class="head"><div><p class="muted crumb">Mantenedores</p><h1>Asistente IA</h1><p class="lede">El asistente del panel responde con la API key de Claude del estudio. Solo los administradores la ven y la cambian; al guardarla se cifra en el servidor y nunca vuelve al navegador.</p></div></div>
+  <div class="grid2">
+    <div class="sheet"><h2>Estado</h2>${estado}
+      ${hayClave ? `<p class="small"><button class="btn ghost sm" data-a="ia-clave-borrar">Eliminar key</button></p>` : ''}</div>
+    ${puede ? `<div class="sheet"><h2>${hayClave ? 'Reemplazar la API key' : 'Configurar la API key'}</h2>
+      <div class="stack" style="gap:12px">
+        <p class="small muted" style="margin:0">Crea la key en la <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">Claude Console</a> (la suscripción Pro no sirve para esto). Hazla dedicada a esta app y define un límite de gasto mensual en tu Console.</p>
+        <div class="field"><label for="iaClave">API key</label><input type="password" id="iaClave" autocomplete="off" spellcheck="false" placeholder="sk-ant-…"><span class="hint">Se verifica con Anthropic (una llamada mínima) y recién entonces se cifra y se guarda.</span></div>
+        <button class="btn" data-a="ia-clave-guardar" style="align-self:flex-start">Verificar y guardar</button>
+      </div></div>` : ''}
+  </div>`;
+}
+
 function vAsistentePanel() {
   const hasData = S.lotes.length > 0 || S.clientes.length > 0;
   const header = `<div class="aw-head"><b>Asistente</b><button class="aw-close" data-a="aw-toggle" aria-label="Cerrar asistente">✕</button></div>`;
   if (DEMO) return header + `<div class="aw-body"><p class="muted">En la versión de demostración el asistente está apagado: necesita el servidor del estudio para consultar al modelo.</p></div>`;
   if (!SAMPLE) return header + `<div class="aw-body"><p class="muted">El asistente no está disponible: ingresa al panel para hacer consultas sobre los comprobantes.</p></div>`;
-  // Con cuentas reales cada persona consulta con SU key de Claude (el servidor la guarda cifrada y nunca la devuelve).
+  // Con cuentas reales el asistente usa la API key del estudio, que configura un administrador en la pestaña «Asistente IA».
   const ia = PANEL.auth === 'supabase' ? S.claveIa : null;
-  const usaClave = Boolean(ia && ia.estado !== 'no_requerida');
-  const sinClave = usaClave && ia.estado !== 'activa';
-  const pideClave = sinClave || (usaClave && S.claveIaEditar);
-  const cajaClave = !usaClave ? '' : pideClave ? `<div class="sheet" style="margin:0 0 12px"><h3 style="margin:0 0 6px">${ia.estado === 'invalida' ? 'Tu API key fue rechazada' : 'Conecta tu API key de Claude'}</h3>
-      <p class="small muted" style="margin:0 0 8px">El asistente consulta con tu propia key de la <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">Claude Console</a>, no con tu suscripción Pro. Crea una key dedicada para esta app y define un límite de gasto mensual en tu Console.</p>
-      <div class="field"><label for="iaClave" class="small">API key</label><input type="password" id="iaClave" autocomplete="off" spellcheck="false" placeholder="sk-ant-…"></div>
-      <p class="small" style="margin:8px 0 0"><button class="btn" data-a="ia-clave-guardar">Verificar y guardar</button>${ia.estado === 'activa' ? ` <button class="link" data-a="ia-clave-cancelar">Cancelar</button>` : ''}</p></div>`
-    : `<p class="small muted" style="margin:0 0 8px">Tu API key: <b>sk-ant-…${esc(ia.ultimos4)}</b> · <button class="link" data-a="ia-clave-cambiar">Reemplazar</button> · <button class="link" data-a="ia-clave-borrar">Eliminar</button></p>`;
+  const sinClave = Boolean(ia && ia.estado !== 'no_requerida' && ia.estado !== 'activa');
+  const cajaClave = !sinClave ? '' : `<div class="sheet" style="margin:0 0 12px"><p class="small" style="margin:0">${ia.estado === 'invalida' ? 'La API key del estudio fue rechazada por Anthropic.' : 'El asistente aún no tiene una API key.'} ${S.yo?.rol === 'admin' ? `<button class="link" data-a="go" data-v="ia">Configurarla en «Asistente IA»</button>` : 'Pídele a un administrador que la configure.'}</p></div>`;
   const sug = ['¿Por qué no cuadra mayo y en qué cuenta está la diferencia?', '¿Qué cuentas tienen más movimientos en junio?', 'Busca movimientos de marzo sin centro de costo', '¿Cuánto se vendió cada mes, según la cuenta de ventas?'];
   return header + `
   <div class="aw-sub"><div class="field"><label for="chatCliente" class="small">Cliente</label><select id="chatCliente"><option value="">Todos</option>${S.clientes.map(c => `<option value="${c.id}" ${S.chatCliente === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div></div>
@@ -1852,7 +1872,7 @@ function vAsistentePanel() {
     </div>
   </div>
   <div class="aw-foot">
-    <div class="composer"><textarea id="chatIn" placeholder="${sinClave ? 'Conecta tu API key para preguntar' : 'Escribe una consulta'}" ${hasData && !sinClave ? '' : 'disabled'} aria-label="Consulta"></textarea>
+    <div class="composer"><textarea id="chatIn" placeholder="${sinClave ? 'El asistente no tiene API key configurada' : 'Escribe una consulta'}" ${hasData && !sinClave ? '' : 'disabled'} aria-label="Consulta"></textarea>
       ${S.chatBusy ? `<button class="btn ghost" data-a="stop">Detener</button>` : `<button class="btn" data-a="send" ${hasData && !sinClave ? '' : 'disabled'}>Preguntar</button>`}</div>
     ${S.chat.length ? `<p class="small" style="margin-top:8px"><button class="link" data-a="clear-chat">Nueva conversación</button></p>` : ''}
   </div>`;
@@ -1922,7 +1942,7 @@ let chatCtl = null;
 async function cargarClaveIa() {
   if (PANEL.auth !== 'supabase') return;
   try { S.claveIa = await api('/ia/clave'); } catch (e) { S.claveIa = null; }
-  S.claveIaEditar = false; render();
+  render();
 }
 async function preguntar(q) {
   if (!q || S.chatBusy) return;
@@ -1953,7 +1973,7 @@ async function preguntar(q) {
     if (!listo) ans.content = 'La consulta necesitó demasiadas búsquedas. Prueba con una pregunta más acotada.';
   } catch (e) {
     if (e.code === 'http_428') cargarClaveIa(); // falta la key o fue rechazada: el asistente muestra la caja para pegarla
-    ans.content = e.name === 'AbortError' ? 'Consulta detenida.' : ({ http_428: 'Configura tu API key de Claude (arriba) para usar el asistente.', http_402: 'Tu cuenta de la Claude Console no tiene saldo. Recárgala y vuelve a preguntar.', http_429: 'Demasiadas consultas seguidas. Espera un momento y vuelve a preguntar.', http_413: 'Hay demasiados datos para una sola consulta. Elige un cliente específico arriba.', unauthorized: 'Tu sesión expiró. Vuelve a ingresar.' }[e.code] || 'No se pudo completar la respuesta (' + (e.code || 'error') + ').');
+    ans.content = e.name === 'AbortError' ? 'Consulta detenida.' : ({ http_428: 'El asistente no tiene una API key válida. Un administrador debe configurarla en «Asistente IA».', http_402: 'La cuenta de la Claude Console del estudio no tiene saldo. Un administrador debe recargarla.', http_429: 'Demasiadas consultas seguidas. Espera un momento y vuelve a preguntar.', http_413: 'Hay demasiados datos para una sola consulta. Elige un cliente específico arriba.', unauthorized: 'Tu sesión expiró. Vuelve a ingresar.' }[e.code] || 'No se pudo completar la respuesta (' + (e.code || 'error') + ').');
   }
   S.chatBusy = false; chatCtl = null; render();
 }
@@ -2133,18 +2153,16 @@ document.addEventListener('click', async e => {
     case 'send': { const q = $('#chatIn').value.trim(); if (q) { $('#chatIn').value = ''; preguntar(q); } break; }
     case 'stop': chatCtl?.abort(); break;
     case 'clear-chat': S.chat = []; render(); break;
-    case 'ia-clave-cambiar': S.claveIaEditar = true; render(); $('#iaClave')?.focus(); break;
-    case 'ia-clave-cancelar': S.claveIaEditar = false; render(); break;
     case 'ia-clave-guardar': {
       const k = $('#iaClave').value.trim();
       if (!k.startsWith('sk-ant-')) { toast('La API key de Claude empieza con «sk-ant-»'); break; }
       toast('Verificando tu API key…');
-      try { S.claveIa = await api('/ia/clave', { method: 'POST', body: JSON.stringify({ clave: k }) }); S.claveIaEditar = false; toast('API key guardada'); }
+      try { S.claveIa = await api('/ia/clave', { method: 'POST', body: JSON.stringify({ clave: k }) }); toast('API key guardada y cifrada'); }
       catch (err) { toast({ http_400: 'Esa no parece una API key de Claude', http_422: 'Anthropic rechazó esa key. Revisa que esté activa', http_402: 'La cuenta de esa key no tiene saldo en la Console', http_429: 'Demasiados intentos: espera un minuto', http_502: 'No se pudo verificar la key. Reintenta en un momento' }[err.code] || 'No se pudo guardar la key'); }
       $('#iaClave') && ($('#iaClave').value = ''); render(); break;
     }
     case 'ia-clave-borrar': {
-      try { await api('/ia/clave', { method: 'DELETE' }); S.claveIa = { estado: 'sin_clave' }; S.claveIaEditar = false; toast('API key eliminada'); }
+      try { await api('/ia/clave', { method: 'DELETE' }); S.claveIa = { estado: 'sin_clave' }; toast('API key eliminada'); }
       catch (err) { toast('No se pudo eliminar la key'); }
       render(); break;
     }

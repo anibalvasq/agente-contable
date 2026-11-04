@@ -4,9 +4,9 @@ import { leerLlave } from '../security/vault.js';
 import { createClaveIaService, createMemoryClaveStore, createPostgresClaveStore, type ClaveIaService } from './claveIa.js';
 
 /**
- * La key de Claude de cada persona solo tiene sentido con cuentas reales (Supabase Auth): sin ellas
- * no hay "quién pregunta" y el asistente sigue con el LLM del estudio. Necesita CREDENTIALS_KEY
- * para cifrar; sin ella el asistente por persona no se enciende (y se avisa, no se cae el panel).
+ * La API key de Claude del estudio la configura un administrador, así que solo tiene sentido con
+ * cuentas reales (Supabase Auth): sin ellas no hay roles y el asistente sigue con el LLM del estudio.
+ * Necesita CREDENTIALS_KEY para cifrar; sin ella no se enciende (y se avisa, no se cae el panel).
  */
 export async function crearClaveIaDesdeEnv(hayAuth: boolean): Promise<ClaveIaService | undefined> {
   if (!hayAuth) return undefined;
@@ -15,7 +15,7 @@ export async function crearClaveIaDesdeEnv(hayAuth: boolean): Promise<ClaveIaSer
     llave = leerLlave(env.CREDENTIALS_KEY);
   } catch (err) {
     // No tumba el panel entero por esto; el asistente sigue con el LLM del estudio hasta que se defina la llave.
-    logger.warn({ motivo: err instanceof Error ? err.message : 'llave inválida' }, 'sin CREDENTIALS_KEY válida: las personas no pueden guardar su API key de Claude');
+    logger.warn({ motivo: err instanceof Error ? err.message : 'llave inválida' }, 'sin CREDENTIALS_KEY válida: un administrador no puede guardar la API key de Claude');
     return undefined;
   }
   return createClaveIaService({
