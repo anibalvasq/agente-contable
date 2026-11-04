@@ -11,6 +11,9 @@ import { procesarCorreo, type ResolverIA } from '../correos/procesar.js';
 import type { Empresa } from '../empresas/empresas.js';
 import { logger } from '../logger.js';
 import { armarPlan, planACsv } from '../recordatorios/plan.js';
+import { MemoryRateLimiter } from '../security/rateLimit.js';
+import { ErrorAnthropic, redactarClaves } from './anthropic.js';
+import { ErrorClave, type ClaveIaService } from './claveIa.js';
 import type { PanelStore } from './store.js';
 
 /**
@@ -44,7 +47,9 @@ export interface PanelOptions {
   clave: string | undefined;
   produccion: boolean;
   /** Se inyecta para poder testear sin llamar al LLM. */
-  responder?: (body: unknown) => Promise<unknown>;
+  responder?: (body: unknown, apiKey?: string) => Promise<unknown>;
+  /** API key de Claude por persona. Solo con Supabase Auth; sin él el asistente usa el LLM del estudio. */
+  claveIa?: ClaveIaService;
   /** Resolver de consultas simples del proceso 5. Sin él, esas consultas se derivan a una persona. */
   resolverCorreo?: ResolverIA;
 }
@@ -273,17 +278,84 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
     },
   );
 
+  // ── API key de Claude de cada persona (BYOK). Nunca se devuelve: solo estado y últimos 4. ──
+  const { claveIa } = opts;
+  const limitador = new MemoryRateLimiter();
+  const sinCache = (reply: FastifyReply): void => void reply.header('Cache-Control', 'no-store');
+
+  app.get('/panel/api/ia/clave', { preHandler: autorizar }, async (req, reply) => {
+    sinCache(reply);
+    // Sin cuentas reales (o sin llave de cifrado) el asistente usa el LLM del estudio: no hay nada que configurar.
+    if (!claveIa || !req.miembro) return { estado: 'no_requerida' };
+    return claveIa.estado(req.miembro.userId);
+  });
+
+  app.post<{ Body: { clave?: unknown } }>('/panel/api/ia/clave', { preHandler: autorizar, bodyLimit: 2 * 1024 }, async (req, reply) => {
+    sinCache(reply);
+    if (!claveIa || !req.miembro) return reply.code(404).send({ error: 'no_disponible' });
+    const clave = req.body?.clave;
+    if (typeof clave !== 'string') return reply.code(400).send({ error: 'formato_invalido' });
+    // Cada guardado hace una llamada al modelo con la key pegada: se frena para que no sirva de banco de pruebas de keys.
+    const lim = await limitador.hit(`clave:${req.miembro.userId}`, 10, 60_000);
+    if (!lim.allowed) return reply.code(429).header('Retry-After', Math.ceil(lim.retryAfterMs / 1000)).send({ error: 'demasiados_intentos' });
+    try {
+      const r = await claveIa.guardar(req.miembro.userId, clave);
+      logger.info({ por: req.miembro.email }, 'API key de Claude guardada'); // nunca la key
+      return r;
+    } catch (err) {
+      if (err instanceof ErrorClave) {
+        // 422 y no 401/403: el panel cierra la sesión ante esos dos.
+        const status = err.codigo === 'formato_invalido' ? 400 : err.codigo === 'no_se_pudo_verificar' ? 502 : err.codigo === 'sin_saldo' ? 402 : 422;
+        return reply.code(status).send({ error: err.codigo });
+      }
+      logger.error({ err: redactarClaves(err instanceof Error ? err.message : String(err)) }, 'no se pudo guardar la API key');
+      return reply.code(500).send({ error: 'no_se_pudo_guardar' });
+    }
+  });
+
+  app.delete('/panel/api/ia/clave', { preHandler: autorizar }, async (req, reply) => {
+    sinCache(reply);
+    if (!claveIa || !req.miembro) return reply.code(404).send({ error: 'no_disponible' });
+    await claveIa.eliminar(req.miembro.userId);
+    return reply.code(204).send();
+  });
+
   app.post('/panel/api/asistente', { preHandler: autorizar, bodyLimit: 1024 * 1024 }, async (req, reply) => {
+    sinCache(reply);
     const { asistenteBody, responder } = await import('./assistant.js');
     const parsed = asistenteBody.safeParse(req.body);
     if (!parsed.success) {
       const grande = parsed.error.issues.some((i) => i.code === 'too_big');
       return reply.code(grande ? 413 : 400).send({ error: grande ? 'demasiados datos' : 'consulta inválida' });
     }
+    // Con cuentas reales, cada persona consulta con SU key. 428 = falta algo previo (configurar la key);
+    // no es 401/403 porque el panel cerraría la sesión.
+    let apiKey: string | undefined;
+    const userId = req.miembro?.userId;
+    if (claveIa && userId) {
+      const lim = await limitador.hit(`asistente:${userId}`, 30, 60_000);
+      if (!lim.allowed) return reply.code(429).header('Retry-After', Math.ceil(lim.retryAfterMs / 1000)).send({ error: 'demasiadas_consultas' });
+      try {
+        apiKey = await claveIa.usar(userId);
+      } catch (err) {
+        if (err instanceof ErrorClave) return reply.code(428).send({ error: err.codigo, mensaje: 'Configura tu API key de Claude en el asistente.' });
+        throw err;
+      }
+    }
     try {
-      return await (opts.responder ?? responder)(parsed.data);
+      return await (opts.responder ?? responder)(parsed.data, apiKey);
     } catch (err) {
-      logger.error({ err }, 'el asistente del panel falló');
+      if (err instanceof ErrorAnthropic) {
+        // Anthropic rechazó la key (revocada, sin permisos): se marca para que la persona la reemplace.
+        if (err.tipo === 'clave_invalida' && claveIa && userId) {
+          await claveIa.marcarInvalida(userId);
+          return reply.code(428).send({ error: 'clave_invalida', mensaje: 'Tu API key fue rechazada. Pega una nueva.' });
+        }
+        if (err.tipo === 'sin_saldo') return reply.code(402).send({ error: 'sin_saldo' });
+        if (err.tipo === 'limite') return reply.code(429).header('Retry-After', Math.ceil((err.reintentarMs ?? 3_000) / 1000)).send({ error: 'limite_del_modelo' });
+      }
+      // Ni la key ni el detalle del proveedor salen de aquí: solo el tipo de error.
+      logger.error({ err: redactarClaves(err instanceof Error ? err.message : String(err)) }, 'el asistente del panel falló');
       return reply.code(502).send({ error: 'el_modelo_fallo' });
     }
   });

@@ -151,6 +151,8 @@ const schema = z
     // Opcional: los modelos de Claude más nuevos rechazan `temperature` con un
     // 400 ("deprecated for this model"). Vacía, no se manda y decide el modelo.
     LLM_TEMPERATURE: opcional(z.coerce.number().min(0).max(2)),
+    // Asistente del panel con la API key de Claude de cada persona (BYOK, api.anthropic.com).
+    ANTHROPIC_MODEL: conDefault(z.string(), 'claude-sonnet-5-5'),
     APP_URL: z.string().default(''),
     APP_TITLE: z.string().default('agente-contable'),
 

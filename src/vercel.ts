@@ -4,6 +4,7 @@ import { crearAutenticadorDesdeEnv } from './auth/desdeEnv.js';
 import { resolverConLlm } from './correos/procesar.js';
 import { env } from './env.js';
 import { registerMcp } from './mcp/server.js';
+import { crearClaveIaDesdeEnv } from './panel/claveIaDesdeEnv.js';
 import { registerPanel } from './panel/routes.js';
 import { createPanelStore } from './panel/store.js';
 
@@ -55,7 +56,15 @@ export async function buildPanelApp(): Promise<FastifyInstance> {
   });
 
   await registerMcp(app, { store, token: env.MCP_TOKEN });
-  await registerPanel(app, { store, clave: env.PANEL_PASSWORD, produccion: env.NODE_ENV === 'production', resolverCorreo: resolverConLlm(), ...(auth ? { auth } : {}) });
+  const claveIa = await crearClaveIaDesdeEnv(Boolean(auth));
+  await registerPanel(app, {
+    store,
+    clave: env.PANEL_PASSWORD,
+    produccion: env.NODE_ENV === 'production',
+    resolverCorreo: resolverConLlm(),
+    ...(auth ? { auth } : {}),
+    ...(claveIa ? { claveIa } : {}),
+  });
 
   return app;
 }

@@ -9,6 +9,7 @@ import type { ConversationStore } from './memory/store.js';
 import { crearAutenticadorDesdeEnv } from './auth/desdeEnv.js';
 import { resolverConLlm } from './correos/procesar.js';
 import { registerMcp } from './mcp/server.js';
+import { crearClaveIaDesdeEnv } from './panel/claveIaDesdeEnv.js';
 import { registerPanel } from './panel/routes.js';
 import { createPanelStore } from './panel/store.js';
 
@@ -79,9 +80,12 @@ export async function buildServer(store: ConversationStore, adapter: ChannelAdap
 
   const panelStore = await createPanelStore();
   await registerMcp(app, { store: panelStore, token: env.MCP_TOKEN });
+  const authPanel = await crearAutenticadorDesdeEnv();
+  const claveIa = await crearClaveIaDesdeEnv(Boolean(authPanel));
   await registerPanel(app, {
     store: panelStore,
-    ...(await crearAutenticadorDesdeEnv().then((a) => (a ? { auth: a } : {}))),
+    ...(authPanel ? { auth: authPanel } : {}),
+    ...(claveIa ? { claveIa } : {}),
     clave: env.PANEL_PASSWORD,
     produccion: env.NODE_ENV === 'production',
     resolverCorreo: resolverConLlm(),

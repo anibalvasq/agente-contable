@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { env } from '../env.js';
 import { llm } from '../agent/llm.js';
 import { makeFenceId, untrustedContentRule, wrapUntrusted } from '../agent/guards/untrusted.js';
+import { llamarAnthropic, type Bloque, type MensajeAnthropic } from './anthropic.js';
 
 /**
  * Asistente del panel: responde al EQUIPO del estudio sobre los lotes cargados.
@@ -89,18 +90,82 @@ export const asistenteBody = z.object({
 
 export type AsistenteBody = z.infer<typeof asistenteBody>;
 
-export async function responder(body: AsistenteBody): Promise<{
+export interface RespuestaAsistente {
   content: string | null;
   tool_calls: OpenAI.Chat.ChatCompletionMessageToolCall[];
-}> {
+}
+
+/** Las reglas + los datos del lote, con el vallado puesto. Lo comparten los dos motores. */
+function armarSistema(body: AsistenteBody, fence: string): string {
   // Los datos salen de Excel que exporta el cliente: una glosa puede traer
   // cualquier texto. Van vallados igual que el resultado de una herramienta.
+  return `${REGLAS}\n\n${untrustedContentRule(fence)}\n\n## Datos de la plataforma\n\n${wrapUntrusted(fence, 'datos-de-la-plataforma', body.datos)}`;
+}
+
+/**
+ * Responde con la API key de Claude de QUIEN pregunta (api.anthropic.com). Traduce hacia y desde el
+ * formato de mensajes del panel (el de OpenAI) para que el navegador no cambie su protocolo.
+ */
+export async function responderConClaude(
+  body: AsistenteBody,
+  apiKey: string,
+  deps: { llamar?: typeof llamarAnthropic } = {},
+): Promise<RespuestaAsistente> {
+  const fence = makeFenceId();
+  const mensajes: MensajeAnthropic[] = [];
+  const agregar = (m: MensajeAnthropic): void => {
+    // Varios resultados de herramienta seguidos van en UN mensaje de usuario: es lo que la API exige.
+    const ultimo = mensajes[mensajes.length - 1];
+    if (ultimo && ultimo.role === 'user' && m.role === 'user' && Array.isArray(ultimo.content) && Array.isArray(m.content)) {
+      ultimo.content.push(...m.content);
+    } else mensajes.push(m);
+  };
+  for (const m of body.mensajes) {
+    if (m.role === 'user') agregar({ role: 'user', content: m.content });
+    else if (m.role === 'tool') {
+      agregar({ role: 'user', content: [{ type: 'tool_result', tool_use_id: m.tool_call_id, content: wrapUntrusted(fence, 'herramienta:buscar_movimientos', m.content) }] });
+    } else {
+      const bloques: Bloque[] = [];
+      if (m.content) bloques.push({ type: 'text', text: m.content });
+      for (const tc of m.tool_calls ?? []) {
+        let input: unknown = {};
+        try {
+          input = JSON.parse(tc.function.arguments || '{}');
+        } catch {
+          /* argumentos rotos: la herramienta recibe {} y responde con error */
+        }
+        bloques.push({ type: 'tool_use', id: tc.id, name: tc.function.name, input });
+      }
+      if (bloques.length) mensajes.push({ role: 'assistant', content: bloques });
+    }
+  }
+
+  const r = await (deps.llamar ?? llamarAnthropic)(apiKey, {
+    model: env.ANTHROPIC_MODEL,
+    max_tokens: env.LLM_MAX_TOKENS,
+    system: armarSistema(body, fence),
+    messages: mensajes,
+    tools: [
+      {
+        name: BUSCAR_MOVIMIENTOS.function.name,
+        description: BUSCAR_MOVIMIENTOS.function.description ?? '',
+        input_schema: { type: 'object', ...BUSCAR_MOVIMIENTOS.function.parameters },
+      },
+    ],
+  });
+
+  const texto = r.content.filter((b): b is Extract<Bloque, { type: 'text' }> => b.type === 'text').map((b) => b.text).join('');
+  const tool_calls = r.content
+    .filter((b): b is Extract<Bloque, { type: 'tool_use' }> => b.type === 'tool_use')
+    .map((b) => ({ id: b.id, type: 'function' as const, function: { name: b.name, arguments: JSON.stringify(b.input ?? {}) } }));
+  return { content: texto || null, tool_calls };
+}
+
+export async function responder(body: AsistenteBody, apiKey?: string): Promise<RespuestaAsistente> {
+  if (apiKey) return responderConClaude(body, apiKey);
   const fence = makeFenceId();
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    {
-      role: 'system',
-      content: `${REGLAS}\n\n${untrustedContentRule(fence)}\n\n## Datos de la plataforma\n\n${wrapUntrusted(fence, 'datos-de-la-plataforma', body.datos)}`,
-    },
+    { role: 'system', content: armarSistema(body, fence) },
     ...body.mensajes.map((m): OpenAI.Chat.ChatCompletionMessageParam => {
       if (m.role === 'tool') {
         return { role: 'tool', tool_call_id: m.tool_call_id, content: wrapUntrusted(fence, 'herramienta:buscar_movimientos', m.content) };
