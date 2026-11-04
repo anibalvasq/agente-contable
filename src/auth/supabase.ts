@@ -19,6 +19,8 @@ export interface SupabaseConfig {
   publishableKey: string;
   /** Clave de administración. SOLO servidor: crea cuentas. Sin ella no se pueden crear usuarios. */
   serviceKey?: string;
+  /** Dirección del panel (p. ej. https://x.vercel.app/panel): a dónde lleva el enlace del correo de invitación. Debe estar en las Redirect URLs de Supabase. */
+  panelUrl?: string;
 }
 
 export type Verificacion =
@@ -32,7 +34,8 @@ export interface NuevoMiembro {
   email: string;
   nombre: string;
   rol: Rol;
-  password: string;
+  /** Sin clave inicial se envía la invitación de Supabase y la persona define la suya. */
+  password?: string;
 }
 
 export class ErrorAuth extends Error {
@@ -99,15 +102,22 @@ export function createAutenticador(cfg: SupabaseConfig, equipo: EquipoStore, fet
     async crear({ email, nombre, rol, password }) {
       const correo = email.trim().toLowerCase();
       if (!EMAIL.test(correo) || !nombre.trim() || !['admin', 'equipo'].includes(rol)) throw new ErrorAuth('datos_invalidos', 'Correo, nombre o rol inválidos.');
-      if (password.length < LARGO_MIN_CLAVE) throw new ErrorAuth('clave_debil', `La clave debe tener al menos ${LARGO_MIN_CLAVE} caracteres.`);
+      const invitar = !password;
+      if (!invitar && password.length < LARGO_MIN_CLAVE) throw new ErrorAuth('clave_debil', `La clave debe tener al menos ${LARGO_MIN_CLAVE} caracteres.`);
 
-      const r = await fetchFn(`${url}/auth/v1/admin/users`, {
-        method: 'POST',
-        headers: cabecerasAdmin(),
-        // email_confirm: la cuenta la crea una persona de confianza del estudio, no hay
-        // un correo de verificación que esperar.
-        body: JSON.stringify({ email: correo, password, email_confirm: true, user_metadata: { nombre: nombre.trim() } }),
-      });
+      // Con clave: cuenta ya confirmada (email_confirm), nadie espera un correo. Sin clave:
+      // Supabase envía la invitación y la persona elige su clave desde el enlace.
+      const r = invitar
+        ? await fetchFn(`${url}/auth/v1/invite${cfg.panelUrl ? `?redirect_to=${encodeURIComponent(cfg.panelUrl)}` : ''}`, {
+            method: 'POST',
+            headers: cabecerasAdmin(),
+            body: JSON.stringify({ email: correo, data: { nombre: nombre.trim() } }),
+          })
+        : await fetchFn(`${url}/auth/v1/admin/users`, {
+            method: 'POST',
+            headers: cabecerasAdmin(),
+            body: JSON.stringify({ email: correo, password, email_confirm: true, user_metadata: { nombre: nombre.trim() } }),
+          });
       if (r.status === 422 || r.status === 409) {
         // El proyecto de Supabase es compartido: ese correo puede ser de una cuenta de OTRA
         // aplicación. No se le da acceso al estudio por tener la cuenta: la dueña de esa

@@ -131,11 +131,11 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
       { preHandler: soloAdmin, bodyLimit: 4 * 1024 },
       async (req, reply) => {
         const { email, nombre, rol, password } = req.body ?? {};
-        if (typeof email !== 'string' || typeof nombre !== 'string' || typeof password !== 'string' || (rol !== 'admin' && rol !== 'equipo')) {
-          return reply.code(400).send({ error: 'se esperan email, nombre, rol (admin o equipo) y password' });
+        if (typeof email !== 'string' || typeof nombre !== 'string' || (password !== undefined && typeof password !== 'string') || (rol !== 'admin' && rol !== 'equipo')) {
+          return reply.code(400).send({ error: 'se esperan email, nombre, rol (admin o equipo) y, opcional, password' });
         }
         try {
-          const m = await auth.crear({ email, nombre, rol, password });
+          const m = await auth.crear({ email, nombre, rol, ...(password ? { password } : {}) });
           // Se registra QUIÉN creó la cuenta, sin la clave.
           logger.info({ por: req.miembro?.email, creada: m.email, rol: m.rol }, 'cuenta del estudio creada');
           return reply.code(201).send({ miembro: m });

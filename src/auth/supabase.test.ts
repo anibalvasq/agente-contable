@@ -23,7 +23,7 @@ function supabaseFalso() {
       const id = tokens.get(auth.replace('Bearer ', ''));
       return id ? Response.json({ id }) : new Response('{}', { status: 401 });
     }
-    if (u.endsWith('/auth/v1/admin/users') && init?.method === 'POST') {
+    if ((u.endsWith('/auth/v1/admin/users') || u.includes('/auth/v1/invite')) && init?.method === 'POST') {
       assert.equal(auth, 'Bearer service-secreta'); // la creación usa la service key, nunca la pública
       const { email } = JSON.parse(String(init.body)) as { email: string };
       if (existentes.has(email)) return new Response('{}', { status: 422 });
@@ -77,6 +77,20 @@ describe('creación de cuentas', () => {
     const m = await auth.crear({ email: ' Nueva@Estudio.cl ', nombre: 'Nueva', rol: 'equipo', password: 'una-clave-larga' });
     assert.equal(m.email, 'nueva@estudio.cl');
     assert.equal((await equipo.get(m.userId))?.rol, 'equipo');
+  });
+  it('sin clave inicial envía la invitación de Supabase (con destino al panel) y registra en equipo', async () => {
+    const { fetchFalso, llamadas } = supabaseFalso();
+    const equipo = createMemoryEquipoStore();
+    const auth = createAutenticador({ url: 'https://x.supabase.co', publishableKey: 'pub', serviceKey: 'service-secreta', panelUrl: 'https://app.cl/panel' }, equipo, fetchFalso);
+    const m = await auth.crear({ email: 'Invitada@Estudio.cl', nombre: 'Invitada', rol: 'equipo' });
+    assert.equal(m.email, 'invitada@estudio.cl');
+    assert.ok(llamadas.includes('POST /auth/v1/invite?redirect_to=https%3A%2F%2Fapp.cl%2Fpanel'));
+    assert.equal((await equipo.get(m.userId))?.activo, true);
+  });
+  it('la invitación tampoco toma un correo que ya existe en el proyecto', async () => {
+    const { auth, equipo } = await armar();
+    await assert.rejects(auth.crear({ email: 'otra@app.cl', nombre: 'X', rol: 'equipo' }), (e: ErrorAuth) => e.codigo === 'correo_ya_registrado');
+    assert.equal((await equipo.list()).length, 2);
   });
   it('rechaza claves cortas y correos inválidos sin llamar a Supabase', async () => {
     const { auth, llamadas } = await armar();

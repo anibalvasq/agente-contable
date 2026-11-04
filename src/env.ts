@@ -132,6 +132,8 @@ const schema = z
     SUPABASE_URL: opcional(z.string().url()),
     SUPABASE_PUBLISHABLE_KEY: opcional(z.string()),
     SUPABASE_SERVICE_ROLE_KEY: opcional(z.string()),
+    /** URL pública del panel (https://tu-app.vercel.app/panel): destino del enlace en el correo de invitación. */
+    PANEL_URL: opcional(z.string().url()),
     /** 'require' = conexión cifrada a Postgres (Supabase la exige). Vacío = sin TLS (local). */
     DATABASE_SSL: opcional(z.enum(['require'])),
 

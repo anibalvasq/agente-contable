@@ -365,9 +365,10 @@ body:not(.logged-out) #loginScreen{display:none}
     <div class="stack">
       <div class="field" id="nombreField"><label for="loginNombre">Nombre completo</label><input type="text" id="loginNombre" autocomplete="name" placeholder="Ej.: Gonzalo Vergara"></div>
       <div class="field"><label for="loginCorreo">Correo</label><input type="email" id="loginCorreo" autocomplete="email" placeholder="nombre@vergarayvasquez.cl"></div>
-      <div class="field" id="passField" hidden><label for="loginPass">Contraseña</label><input type="password" id="loginPass" autocomplete="current-password"><span class="hint">¿No tienes cuenta o olvidaste la contraseña? Pídesela a un administrador del estudio.</span></div>
+      <div class="field" id="passField" hidden><label for="loginPass">Contraseña</label><input type="password" id="loginPass" autocomplete="current-password"><span class="hint"><a href="#" data-a="recuperar-clave">¿Olvidaste tu contraseña?</a> Te enviamos un correo para crear una nueva. Si no tienes cuenta, pídela a un administrador.</span></div>
+      <div class="field" id="defField" hidden><label for="loginNueva">Elige tu contraseña</label><input type="password" id="loginNueva" autocomplete="new-password"><span class="hint">Mínimo 10 caracteres. Con ella ingresarás desde ahora.</span></div>
       <div class="field" id="claveField" hidden><label for="loginClave">Clave del panel</label><input type="password" id="loginClave" autocomplete="current-password"><span class="hint">La entrega quien administra el servidor.</span></div>
-      <button class="btn" data-a="iniciar-sesion">Ingresar</button>
+      <button class="btn" id="loginBtn" data-a="iniciar-sesion">Ingresar</button>
     </div>
   </div>
 </div>
@@ -613,6 +614,20 @@ async function cargarEstado() {
     // Con cuentas reales no se pide "nombre": sale de la cuenta.
     $('#nombreField').hidden = true; $('#claveField').hidden = true; $('#passField').hidden = false;
     $('#loginCorreo').placeholder = 'tu correo del estudio';
+    // Llegada desde el enlace del correo (invitación o recuperación): Supabase deja la sesión en
+    // el hash de la URL. Se guarda y se pide elegir la contraseña antes de entrar.
+    const h = new URLSearchParams(location.hash.slice(1));
+    if (h.get('access_token') && ['invite', 'recovery'].includes(h.get('type'))) {
+      guardarTok({ access_token: h.get('access_token'), refresh_token: h.get('refresh_token'), expires_in: Number(h.get('expires_in')) || 3600 });
+      history.replaceState(null, '', location.pathname + location.search);
+      PANEL.definirClave = true;
+      if (S.sesion) { const t = leerTok(); salir(); lsSet(TOK_KEY, JSON.stringify(t)); }
+      renderChrome();
+      $('#loginCorreo').closest('.field').hidden = true; $('#passField').hidden = true; $('#defField').hidden = false;
+      $('#loginBtn').textContent = 'Guardar contraseña y entrar'; $('#loginBtn').dataset.a = 'definir-clave';
+      return;
+    }
+    if (h.get('error_description')) { history.replaceState(null, '', location.pathname + location.search); toast('El enlace del correo venció o ya se usó. Pide uno nuevo con «¿Olvidaste tu contraseña?»'); }
     // Una sesión guardada de antes se confirma con el servidor (y trae el rol).
     if (S.sesion) { try { S.yo = (await api('/yo')).miembro; render(); } catch (e) { /* api() ya cerró la sesión si correspondía */ } }
   }
@@ -1278,7 +1293,7 @@ function vEquipo() {
           <div class="field"><label for="eqNombre">Nombre completo</label><input type="text" id="eqNombre" autocomplete="off"></div>
           <div class="field"><label for="eqCorreo">Correo</label><input type="email" id="eqCorreo" autocomplete="off"></div>
           <div class="field"><label for="eqRol">Rol</label><select id="eqRol"><option value="equipo">Equipo</option><option value="admin">Administrador</option></select></div>
-          <div class="field"><label for="eqClave">Clave inicial</label><input type="password" id="eqClave" autocomplete="new-password"><span class="hint">Mínimo 10 caracteres. Entrégala por un canal seguro; la persona puede cambiarla al ingresar.</span></div>
+          <div class="field"><label for="eqClave">Clave inicial (opcional)</label><input type="password" id="eqClave" autocomplete="new-password"><span class="hint">Déjala vacía y la persona recibe una invitación por correo para elegir su propia clave (recomendado). Si la escribes: mínimo 10 caracteres y entrégala por un canal seguro.</span></div>
           <button class="btn" data-a="equipo-crear" style="align-self:flex-start">Crear cuenta</button>
         </div>
       </div>
@@ -2124,11 +2139,31 @@ document.addEventListener('click', async e => {
       S.sesion = { nombre, correo: $('#loginCorreo').value.trim() };
       lsSet('ac_sesion', JSON.stringify(S.sesion)); render(); initRuntime(); break;
     }
+    case 'recuperar-clave': {
+      const correo = $('#loginCorreo').value.trim();
+      if (!correo) { toast('Escribe tu correo arriba y vuelve a pulsar el enlace'); $('#loginCorreo').focus(); break; }
+      // Supabase responde igual exista o no la cuenta: no revela quién tiene acceso.
+      try { await sbAuth('/recover?redirect_to=' + encodeURIComponent(location.origin + location.pathname), { body: { email: correo } }); toast('Si el correo tiene cuenta, te enviamos un enlace para crear una nueva contraseña'); }
+      catch (err) { toast(err.status === 429 ? 'Espera un momento antes de pedir otro correo' : 'No se pudo enviar el correo'); }
+      break;
+    }
+    case 'definir-clave': {
+      const nueva = $('#loginNueva').value;
+      if (nueva.length < 10) { toast('La contraseña debe tener al menos 10 caracteres'); break; }
+      try { await sbAuth('/user', { method: 'PUT', body: { password: nueva }, token: await tokenVigente() }); }
+      catch (err) { toast('No se pudo guardar la contraseña. Pide un enlace nuevo'); break; }
+      try { S.yo = (await api('/yo')).miembro; }
+      catch (err) { lsDel(TOK_KEY); if (!['unauthorized', 'http_403'].includes(err.code)) toast('No se pudo conectar con el servidor'); break; }
+      PANEL.definirClave = false; $('#loginNueva').value = '';
+      S.sesion = { nombre: S.yo.nombre, correo: S.yo.email };
+      lsSet('ac_sesion', JSON.stringify(S.sesion)); render(); initRuntime(); break;
+    }
     case 'cerrar-sesion': salir(); break;
     case 'equipo-crear': {
       const body = { nombre: $('#eqNombre').value.trim(), email: $('#eqCorreo').value.trim(), rol: $('#eqRol').value, password: $('#eqClave').value };
-      if (!body.nombre || !body.email || !body.password) { toast('Completa nombre, correo y clave inicial'); break; }
-      try { await api('/equipo', { method: 'POST', body: JSON.stringify(body) }); toast('Cuenta creada. Entrega la clave inicial por un canal seguro'); await cargarEquipo(); }
+      if (!body.nombre || !body.email) { toast('Completa nombre y correo'); break; }
+      if (!body.password) delete body.password;
+      try { await api('/equipo', { method: 'POST', body: JSON.stringify(body) }); toast(body.password ? 'Cuenta creada. Entrega la clave inicial por un canal seguro' : 'Cuenta creada. Se envió la invitación por correo'); await cargarEquipo(); }
       catch (err) { toast(err.code === 'http_409' ? 'Ese correo ya tiene una cuenta en el proyecto: usa otro' : err.code === 'http_400' ? 'Revisa los datos: la clave debe tener al menos 10 caracteres' : 'No se pudo crear la cuenta'); }
       break;
     }

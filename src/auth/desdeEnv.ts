@@ -6,7 +6,12 @@ import { createAutenticador, type Autenticador } from './supabase.js';
 export async function crearAutenticadorDesdeEnv(): Promise<Autenticador | undefined> {
   if (!env.SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY) return undefined;
   return createAutenticador(
-    { url: env.SUPABASE_URL, publishableKey: env.SUPABASE_PUBLISHABLE_KEY, ...(env.SUPABASE_SERVICE_ROLE_KEY ? { serviceKey: env.SUPABASE_SERVICE_ROLE_KEY } : {}) },
+    {
+      url: env.SUPABASE_URL,
+      publishableKey: env.SUPABASE_PUBLISHABLE_KEY,
+      ...(env.SUPABASE_SERVICE_ROLE_KEY ? { serviceKey: env.SUPABASE_SERVICE_ROLE_KEY } : {}),
+      ...(env.PANEL_URL ? { panelUrl: env.PANEL_URL } : {}),
+    },
     await createPostgresEquipoStore(),
   );
 }
