@@ -377,9 +377,28 @@ body:not(.logged-out) #loginScreen{display:none}
 .login-card .brand .dbl{display:none}
 .login-card .lede{margin-bottom:20px}
 .login-card .btn{width:100%;padding:10px 15px;margin-top:4px}
+
+/* ---------- indicador de carga ---------- */
+@keyframes girar{to{transform:rotate(360deg)}}
+.spin{width:20px;height:20px;border-radius:50%;border:3px solid var(--rule-strong);border-top-color:var(--accent);animation:girar .8s linear infinite}
+/* Pantalla de arranque: cubre el panel hasta saber si hay sesión, para no mostrar el ingreso o un panel vacío por un instante. */
+#splash{position:fixed;inset:0;z-index:100;display:grid;place-content:center;justify-items:center;gap:16px;background:var(--paper);color:var(--muted);font-size:13.5px;transition:opacity .25s}
+#splash.fuera{opacity:0;pointer-events:none}
+#splash b{color:var(--ink);font-size:16px;letter-spacing:-.01em}
+#splash .spin{width:38px;height:38px;border-width:4px}
+/* Cada vez que el panel espera al servidor (guardar, cargar datos, ingresar) aparece este giro arriba a la derecha. */
+#actividad{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:14px;z-index:60;width:36px;height:36px;display:grid;place-items:center;border-radius:50%;background:var(--sheet);border:1px solid var(--rule);box-shadow:var(--shadow);opacity:0;transform:scale(.8);pointer-events:none;transition:opacity .15s,transform .15s}
+body.cargando #actividad{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
 </style>
 </head>
 <body>
+<div id="splash" role="status" aria-live="polite"><b>Agente Contable</b><div class="spin" aria-hidden="true"></div><span>Cargando…</span></div>
+<div id="actividad" role="status" aria-label="Cargando" aria-hidden="true"><div class="spin"></div></div>
+<script>
+// Red de seguridad: si algo impide terminar el arranque, la pantalla de carga no se queda tapando todo.
+setTimeout(function () { var s = document.getElementById('splash'); if (s) s.classList.add('fuera'); }, 12000);
+</script>
 <div id="loginScreen" class="login-screen">
   <div class="login-card">
     <div class="brand">
@@ -560,8 +579,21 @@ let generacion = 0; // sube al cerrar sesión: corta los sondeos de la sesión a
 const TOK_KEY = 'ac_tok';
 function leerTok() { try { return JSON.parse(lsGet(TOK_KEY)) || null; } catch (e) { return null; } }
 function guardarTok(r) { const t = { access: r.access_token, refresh: r.refresh_token, exp: Date.now() + Math.max(30, (r.expires_in || 3600) - 30) * 1000 }; lsSet(TOK_KEY, JSON.stringify(t)); return t; }
+// Indicador de carga: cuenta las peticiones en curso y muestra el giro si alguna tarda más de 200 ms
+// (así las rápidas no parpadean). El sondeo de fondo no lo cuenta (api con `silencioso`).
+let pendientes = 0, tmrCarga = null;
+function cargando(delta) {
+  pendientes = Math.max(0, pendientes + delta);
+  const on = pendientes > 0;
+  if (on && !tmrCarga && !document.body.classList.contains('cargando')) tmrCarga = setTimeout(() => { tmrCarga = null; if (pendientes > 0) document.body.classList.add('cargando'); }, 200);
+  if (!on) { clearTimeout(tmrCarga); tmrCarga = null; document.body.classList.remove('cargando'); }
+}
+function ocultarSplash() { const s = $('#splash'); if (!s) return; s.classList.add('fuera'); setTimeout(() => s.remove(), 400); }
 async function sbAuth(ruta, { method = 'POST', body, token } = {}) {
-  const r = await fetch(PANEL.supabase.url + '/auth/v1' + ruta, { method, headers: { apikey: PANEL.supabase.publishableKey, 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  cargando(1);
+  let r;
+  try { r = await fetch(PANEL.supabase.url + '/auth/v1' + ruta, { method, headers: { apikey: PANEL.supabase.publishableKey, 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined }); }
+  finally { cargando(-1); }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) { const e = new Error(j.error_description || j.msg || 'error'); e.status = r.status; throw e; }
   return j;
@@ -573,11 +605,15 @@ async function tokenVigente() {
   refrescando ??= sbAuth('/token?grant_type=refresh_token', { body: { refresh_token: t.refresh } }).then(guardarTok).finally(() => { refrescando = null; });
   try { return (await refrescando).access; } catch (e) { lsDel(TOK_KEY); return null; }
 }
-async function api(ruta, opts = {}) {
+async function api(ruta, { silencioso, ...opts } = {}) {
   const headers = opts.body ? { 'Content-Type': 'application/json' } : {};
   const k = lsGet('ac_clave'); if (k) headers.Authorization = 'Bearer ' + k;
-  if (PANEL.auth === 'supabase') { const t = await tokenVigente(); if (t) headers.Authorization = 'Bearer ' + t; }
-  const r = await fetch(API + ruta, { ...opts, headers });
+  if (!silencioso) cargando(1);
+  let r;
+  try {
+    if (PANEL.auth === 'supabase') { const t = await tokenVigente(); if (t) headers.Authorization = 'Bearer ' + t; }
+    r = await fetch(API + ruta, { ...opts, headers });
+  } finally { if (!silencioso) cargando(-1); }
   if (r.status === 401) { salir(); toast(PANEL.auth === 'supabase' ? 'Tu sesión venció: ingresa de nuevo' : 'La clave del panel no es válida o cambió'); }
   if (r.status === 403 && PANEL.auth === 'supabase') { salir(); toast('Tu cuenta no tiene acceso al panel del estudio'); }
   if (!r.ok) { const e = new Error('http ' + r.status); e.code = r.status === 401 ? 'unauthorized' : 'http_' + r.status; throw e; }
@@ -598,7 +634,8 @@ function crearDB() {
       const tick = async () => {
         if (gen !== generacion) return;
         try {
-          const { docs } = await api('/docs/' + col);
+          // La primera carga muestra el giro; los sondeos siguientes (cada 5 s) son de fondo y no.
+          const { docs } = await api('/docs/' + col, { silencioso: ultimo !== null });
           const firma = JSON.stringify(docs);
           if (firma !== ultimo && gen === generacion) { ultimo = firma; cb({ docs: docs.map(d => ({ data: () => d })) }); }
         } catch (e) { if (e.code !== 'unauthorized') onErr?.(e); }
@@ -2847,7 +2884,7 @@ function iaCambio(t) {
 
 /* ============================ inicio ============================ */
 render();
-cargarEstado().then(initRuntime);
+cargarEstado().then(initRuntime).finally(ocultarSplash);
 </script>
 </body>
 </html>
