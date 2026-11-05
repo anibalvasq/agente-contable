@@ -53,6 +53,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 /* ---------- estructura y barra lateral ---------- */
 .app{display:grid;grid-template-columns:260px minmax(0,1fr);min-height:100%}
+/* Solo existen en celular (ver @media 900px): en escritorio el menú es la barra lateral. */
+.topbar,.scrim{display:none}
 .side{background:var(--side);color:var(--side-ink);padding:20px 14px;display:flex;flex-direction:column;gap:20px;position:sticky;top:0;height:100vh;height:100dvh}
 .brand{padding:0 8px;display:flex;flex-direction:column}
 .brand b{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;letter-spacing:-.01em}
@@ -248,25 +250,45 @@ table.ledger{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5
   /* minmax(0,…) y no 1fr: con 1fr la columna crece hasta el ancho de la tabla más ancha
      y la página entera se desplaza de lado en vez de desplazarse la tabla en su tarjeta. */
   .app{grid-template-columns:minmax(0,1fr)}
-  .side{position:sticky;top:env(safe-area-inset-top,0px);height:auto;flex-direction:row;align-items:center;padding:10px 12px;gap:12px;overflow-x:auto;z-index:5}
-  .brand .dbl,.brand span,.side .foot{display:none}
-  .brand b{font-size:14px;white-space:nowrap}
-  .brand b::before{width:28px;height:28px}
-  .nav{flex-direction:row;flex:none;overflow:visible;margin:0;padding:0}
-  .nav .grp,.nav .grp-i,.nav .grp-i[hidden]{display:contents!important}
-  .nav .grp-h{display:none}
-  /* El menú pasa a una tira que se desliza con el dedo: sin barra visible, y con
-     botones de al menos ~40px de alto para tocarlos bien. */
-  .side{scrollbar-width:none}
-  .side::-webkit-scrollbar{display:none}
-  .nav button{white-space:nowrap;padding:11px 12px}
-  .nav button[aria-current="page"]{box-shadow:none}
+  /* Barra superior fija + menú en un cajón que se abre con el botón (☰). Antes era una tira
+     con ~20 secciones escondidas a un deslizamiento, sin agrupar y sin acceso a «Cerrar sesión». */
+  .topbar{display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:20;background:var(--side);color:var(--side-ink);padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top,0px));min-height:56px}
+  .topbar .menu-btn{all:unset;cursor:pointer;flex:none;width:44px;height:44px;display:grid;place-items:center;border-radius:10px;color:var(--side-ink)}
+  .topbar .menu-btn:hover{background:var(--side-hover)}
+  .topbar .menu-btn:focus-visible{outline:2px solid #818CF8}
+  .topbar .menu-btn svg{width:22px;height:22px}
+  .topbar .t-brand{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#6366F1,#06B6D4);color:#fff;font-size:11px;font-weight:800}
+  .topbar .t-title{flex:1;min-width:0;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .side{position:fixed;inset:0 auto 0 0;width:min(300px,86vw);height:100dvh;z-index:40;transform:translateX(-102%);visibility:hidden;transition:transform .22s ease,visibility 0s linear .22s;overflow-y:auto;overscroll-behavior:contain;padding:calc(18px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px));box-shadow:var(--shadow-lg)}
+  body.menu-open .side{transform:none;visibility:visible;transition:transform .22s ease}
+  .scrim{display:block;position:fixed;inset:0;z-index:35;background:rgba(2,6,23,.55);opacity:0;pointer-events:none;transition:opacity .2s}
+  body.menu-open .scrim{opacity:1;pointer-events:auto}
+  body.menu-open{overflow:hidden}
+  .nav{overflow:visible;flex:none}
+  .nav button{padding:12px 12px;min-height:44px}
+  .nav .grp-h{padding:8px 10px}
+  .side .foot{display:block}
   .form-grid{grid-template-columns:1fr}
-  .nav .count{display:none}
   .grid2{grid-template-columns:1fr}
   .steps{grid-template-columns:repeat(3,minmax(0,1fr))}
   .balanza{grid-template-columns:1fr}
-  main{padding-top:24px}
+  main{padding-top:20px}
+  h1{font-size:22px}
+  .head{margin-bottom:18px}
+  .sheet{padding:16px}
+  .toolbar .field{min-width:0;flex:1 1 150px}
+  .toolbar .grow{min-width:0;flex-basis:100%}
+  .ledger td,.ledger th{padding:8px 10px}
+  /* Las tablas se desplazan de lado dentro de su tarjeta; el degradado avisa que hay más. */
+  .scroll{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+}
+/* Pantallas táctiles: objetivos de al menos 44px y campos a 16px (iOS hace zoom si son menores). */
+@media (pointer:coarse){
+  .btn{min-height:44px;padding-inline:18px}
+  .btn.sm{min-height:38px}
+  input[type=text],input[type=email],input[type=number],input[type=password],input[type=search],select,textarea{font-size:16px;min-height:44px}
+  .chips button,.mchip{min-height:40px}
+  .link{padding:6px 2px}
 }
 @media (max-width:520px){ .kpis{grid-template-columns:1fr 1fr;gap:10px} .kpi{padding:12px 14px} .kpi .k-v{font-size:22px} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -331,9 +353,15 @@ table.ledger{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5
 .aw-foot .composer{margin-top:0}
 @media (max-width:480px){
   .aw{right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px))}
-  .aw-panel{width:calc(100vw - 24px)}
   .aw-fab-label{display:none}
-  .aw-fab{padding:14px;border-radius:50%}
+  .aw-fab{padding:14px;border-radius:50%;width:52px;height:52px;justify-content:center}
+  /* En celular el asistente es una hoja que sube desde abajo (casi pantalla completa): con el teclado
+     abierto el alto dinámico (dvh) la mantiene entera, y el botón flotante se oculta mientras está abierta. */
+  .aw-panel{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:min(88dvh,640px);border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom,0px)}
+  .aw:has(.aw-panel:not([hidden])) .aw-fab{display:none}
+  .aw-close{padding:10px 12px;font-size:16px}
+  .login-card{padding:24px 20px}
+  .composer{gap:8px}
 }
 
 /* ---------- ingreso ---------- */
@@ -373,7 +401,15 @@ body:not(.logged-out) #loginScreen{display:none}
   </div>
 </div>
 <div class="app">
-  <aside class="side">
+  <header class="topbar">
+    <button class="menu-btn" type="button" data-a="menu-toggle" aria-label="Abrir menú" aria-controls="sideNav" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <span class="t-brand" aria-hidden="true">VV</span>
+    <b class="t-title" id="topTitle">Agente Contable</b>
+  </header>
+  <div class="scrim" data-a="menu-cerrar"></div>
+  <aside class="side" id="sideNav">
     <div class="brand">
       <b>Agente Contable</b>
       <span>Vergara y Vásquez Auditores</span>
@@ -1144,7 +1180,12 @@ async function cargarMaestrosDemo(cid) {
 }
 
 /* ============================ navegación ============================ */
-function go(view, params = {}) { S.view = view; S.params = params; render(); $('#view').focus({ preventScroll: true }); window.scrollTo(0, 0); }
+// Menú en cajón (solo celular; en escritorio la clase no tiene efecto).
+function setMenu(abierto) {
+  document.body.classList.toggle('menu-open', abierto);
+  const b = $('.menu-btn'); if (b) { b.setAttribute('aria-expanded', String(abierto)); b.setAttribute('aria-label', abierto ? 'Cerrar menú' : 'Abrir menú'); }
+}
+function go(view, params = {}) { setMenu(false); S.view = view; S.params = params; render(); $('#view').focus({ preventScroll: true }); window.scrollTo(0, 0); }
 const NAV = [
   ['inicio', 'Inicio', [['panel', 'Panel']]],
   ['ia', 'Procesos IA', [['ia-mapa', 'Mapa de procesos'], ['ia-fact', '1 · Facturación'], ['ia-cobro', '2 y 7 · Cobranza'], ['ia-f29', '3 · F29 y Previred'], ['ia-recordatorios', '4 · Recordatorios'], ['ia-bandeja', '5 · Correos entrantes']]],
@@ -1186,6 +1227,9 @@ function renderNav() {
     return `<div class="grp"><button class="grp-h" data-a="nav-grp" data-g="${g}" aria-expanded="${abierto}"><span>${t}</span><span class="chev" aria-hidden="true">${abierto ? '▾' : '▸'}</span></button>
       <div class="grp-i" ${abierto ? '' : 'hidden'}>${items.filter(([v]) => !['equipo', 'ia'].includes(v) || S.yo?.rol === 'admin').map(([v, tt]) => `<button data-a="go" data-v="${v}" ${cur === v ? 'aria-current="page"' : ''}><span>${ico(v)}<span>${tt}</span></span><span class="count">${cnt[v] || ''}</span></button>`).join('')}</div></div>`;
   }).join('');
+  // La barra superior (celular) muestra en qué sección estás.
+  const actual = NAV.flatMap(g => g[2]).find(([v]) => v === cur);
+  const tt = $('#topTitle'); if (tt) tt.textContent = actual ? actual[1] : 'Agente Contable';
 }
 function render() {
   renderNav();
@@ -2209,7 +2253,9 @@ document.addEventListener('click', async e => {
       S.sesion = { nombre: S.yo.nombre, correo: S.yo.email };
       lsSet('ac_sesion', JSON.stringify(S.sesion)); render(); initRuntime(); break;
     }
-    case 'cerrar-sesion': salir(); break;
+    case 'menu-toggle': setMenu(!document.body.classList.contains('menu-open')); break;
+    case 'menu-cerrar': setMenu(false); break;
+    case 'cerrar-sesion': setMenu(false); salir(); break;
     case 'equipo-crear': {
       const body = { nombre: $('#eqNombre').value.trim(), email: $('#eqCorreo').value.trim(), rol: $('#eqRol').value, password: $('#eqClave').value };
       if (!body.nombre || !body.email) { toast('Completa nombre y correo'); break; }
@@ -2259,7 +2305,9 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.target.id?.startsWith('mf_') && e.key === 'Enter') { e.preventDefault(); $('[data-a="mant-guardar"]')?.click(); }
-  if ((e.target.id === 'loginNombre' || e.target.id === 'loginCorreo' || e.target.id === 'loginClave') && e.key === 'Enter') { e.preventDefault(); $('[data-a="iniciar-sesion"]').dispatchEvent(new MouseEvent('click', { bubbles: true })); }
+  if (e.key === 'Escape' && document.body.classList.contains('menu-open')) setMenu(false);
+  // «Ir» del teclado del celular también ingresa: antes la contraseña no enviaba el formulario.
+  if (['loginNombre', 'loginCorreo', 'loginPass', 'loginClave', 'loginNueva'].includes(e.target.id) && e.key === 'Enter') { e.preventDefault(); $('#loginBtn').dispatchEvent(new MouseEvent('click', { bubbles: true })); }
   if (e.target.id === 'chatIn' && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); const q = e.target.value.trim(); if (q) { e.target.value = ''; preguntar(q); } }
   if (e.target.id === 'drop' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); $('#filePick').click(); }
   if (e.key === 'Escape' && S.assistantOpen) { S.assistantOpen = false; render(); $('#awFab')?.focus(); }
