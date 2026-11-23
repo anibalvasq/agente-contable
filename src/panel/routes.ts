@@ -8,7 +8,7 @@ import { ErrorAuth, type Autenticador } from '../auth/supabase.js';
 import type { Miembro } from '../auth/equipo.js';
 import { cargarReglas, validarReglas } from '../correos/reglas.js';
 import { procesarCorreo, type ResolverIA } from '../correos/procesar.js';
-import type { Empresa } from '../empresas/empresas.js';
+import { armarEmpresas, type Empresa } from '../empresas/empresas.js';
 import { logger } from '../logger.js';
 import { armarPlan, planACsv } from '../recordatorios/plan.js';
 import { MemoryRateLimiter } from '../security/rateLimit.js';
@@ -229,6 +229,33 @@ export async function registerPanel(app: FastifyInstance, opts: PanelOptions): P
     await store.remove(col, id);
     return reply.code(204).send();
   });
+
+  // ── Base de empresas: se arma con las tres planillas (CSV). Sin `guardar` es una vista previa. ──
+  app.post<{ Body: { f29?: unknown; previred?: unknown; contactos?: unknown; guardar?: unknown } }>(
+    '/panel/api/empresas/importar',
+    { preHandler: autorizar, bodyLimit: 4 * 1024 * 1024 },
+    async (req, reply) => {
+      const { f29, previred, contactos, guardar } = req.body ?? {};
+      if (typeof f29 !== 'string' || typeof previred !== 'string' || typeof contactos !== 'string') {
+        return reply.code(400).send({ error: 'se esperan f29, previred y contactos como texto CSV' });
+      }
+      let r;
+      try {
+        r = armarEmpresas({ f29, previred, contactos });
+      } catch (err) {
+        return reply.code(400).send({ error: err instanceof Error ? err.message : 'no se pudieron leer las planillas' });
+      }
+      if (!r.empresas.length) return reply.code(400).send({ error: 'no se encontró ninguna empresa: revisa que cada planilla tenga una columna RUT' });
+      if (guardar === true) {
+        // Un reimport no pisa el encargado que alguien ya corrigió en el panel si la planilla no lo trae.
+        const previas = new Map(((await store.list('empresas')) as Empresa[]).map((e) => [e.id, e]));
+        const docs = r.empresas.map((e) => ({ ...e, encargado: e.encargado ?? previas.get(e.id)?.encargado ?? null }));
+        await store.putMany('empresas', docs);
+        logger.info({ por: req.miembro?.email, empresas: docs.length }, 'base de empresas importada');
+      }
+      return { guardado: guardar === true, empresas: r.empresas, avisos: r.avisos };
+    },
+  );
 
   // ── Proceso 4: lista de recordatorios del mes. Solo calcula; no envía nada. ──
   app.get<{ Querystring: { mes?: string; formato?: string; feriados?: string; corridos?: string } }>(

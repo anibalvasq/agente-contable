@@ -140,4 +140,24 @@ describe('panel', () => {
       assert.equal(r.borrador, 'Vence el 20.');
     });
   });
+
+  it('importa la base de empresas desde las planillas: vista previa sin guardar, y guardado al confirmar', async () => {
+    const { app } = await armar();
+    const planillas = {
+      f29: 'RUT;Razon Social;Encargado\n76.123.456-0;Empresa Uno SpA;Claudia\n',
+      previred: 'RUT;Razon Social\n76.123.456-0;Empresa Uno SpA\n',
+      contactos: 'RUT;Correo\n76.123.456-0;uno@empresa.cl\n',
+    };
+    const imp = (extra: object) => app.inject({ method: 'POST', url: '/panel/api/empresas/importar', headers: auth(), payload: { ...planillas, ...extra } });
+    const previa = (await imp({})).json();
+    assert.equal(previa.guardado, false);
+    assert.equal(previa.empresas.length, 1);
+    assert.deepEqual((await app.inject({ url: '/panel/api/docs/empresas', headers: auth() })).json(), { docs: [] });
+    assert.equal((await imp({ guardar: true })).json().guardado, true);
+    const { docs } = (await app.inject({ url: '/panel/api/docs/empresas', headers: auth() })).json();
+    assert.equal(docs.length, 1);
+    assert.equal(docs[0].encargado, 'Claudia');
+    assert.equal((await app.inject({ method: 'POST', url: '/panel/api/empresas/importar', payload: planillas })).statusCode, 401);
+    assert.equal((await imp({ f29: 5 })).statusCode, 400);
+  });
 });
